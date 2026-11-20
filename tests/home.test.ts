@@ -56,14 +56,14 @@ describe('defaultOutputDirFor', () => {
     expect(defaultOutputDirFor('归墟玉主', 'H:\\novels')).toBe(join('H:\\novels', '归墟玉主'))
   })
 
-  it('未配置输出目录时回退到 <DSH_HOME>/novels', () => {
+  it('未配置输出目录时回退到 <DSH_HOME>/my-novels', () => {
     process.env.DSH_HOME = 'D:\\dsh-home'
-    expect(defaultOutputDirFor('新书')).toBe(join('D:\\dsh-home', 'novels', '新书'))
+    expect(defaultOutputDirFor('新书')).toBe(join('D:\\dsh-home', 'my-novels', '新书'))
   })
 
   it('空字符串输出目录同样回退', () => {
     process.env.DSH_HOME = 'D:\\dsh-home'
-    expect(defaultOutputDirFor('新书', '')).toBe(join('D:\\dsh-home', 'novels', '新书'))
+    expect(defaultOutputDirFor('新书', '')).toBe(join('D:\\dsh-home', 'my-novels', '新书'))
   })
 
   it('剔除文件名非法字符', () => {

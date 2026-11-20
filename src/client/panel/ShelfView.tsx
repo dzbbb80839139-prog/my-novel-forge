@@ -1,6 +1,6 @@
 /**
  * 书架首页视图：书卡网格（封面/书名/简介/进度）+ 搜索筛选 + 开书入口。
- * 进入小说工坊默认展示；点击书卡进入该书工作台，＋ 进入开书向导页。
+ * 进入我的小说工坊默认展示；点击书卡进入该书工作台，＋ 进入开书向导页。
  */
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { BookOpen, Download, PenLine, Plus, Search, Wand2 } from 'lucide-react'

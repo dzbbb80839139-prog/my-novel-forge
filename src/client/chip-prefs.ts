@@ -1,5 +1,5 @@
 /**
- * 右上角「小说工坊生成状态」芯片的显示偏好（纯客户端、localStorage）。
+ * 右上角「我的小说工坊生成状态」芯片的显示偏好（纯客户端、localStorage）。
  *
  * 为什么是 localStorage 而不是插件配置：这是纯界面 chrome，与显示模式 / 界面密度 /
  * 编辑器字号 / 芯片自身的位置记忆同类；哪个浏览器想清屏就哪个浏览器清，不需要跨端同步。
@@ -16,10 +16,10 @@ import type { RunState } from '../protocol.ts'
 export type RunChipMode = 'off' | 'active' | 'always'
 
 /** localStorage 键（与芯片位置记忆同一命名空间）。 */
-export const RUN_CHIP_MODE_KEY = 'dsh-novel-forge.runChip.mode'
+export const RUN_CHIP_MODE_KEY = 'my-novel-forge.runChip.mode'
 
 /** 同页变更通知用的自定义事件名（跨标签页走原生 storage 事件）。 */
-export const RUN_CHIP_MODE_EVENT = 'dsh-novel-forge:runchip-mode'
+export const RUN_CHIP_MODE_EVENT = 'my-novel-forge:runchip-mode'
 
 /** 默认值与历史行为一致：有生产单状态就显示。 */
 export const DEFAULT_RUN_CHIP_MODE: RunChipMode = 'always'

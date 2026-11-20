@@ -1,8 +1,8 @@
 /**
- * dsh-novel-forge — host half. Mounts the AI novel-forge workbench: docx
+ * my-novel-forge — host half. Mounts the AI my-novel-forge workbench: docx
  * outline import, LLM chapter planning, chapter-by-chapter generation
  * (3000-4000 chars each), Markdown output into your chosen folder, and the
- * /api/dsh-novel-forge route family. The browser half (./client) renders the
+ * /api/my-novel-forge route family. The browser half (./client) renders the
  * workbench panel. Everything rides official NPM SDK packages — no dsh source
  * changes.
  */
@@ -22,13 +22,13 @@ import { dshHomePath } from './home.ts'
 import { novelSettingsNamespace, persistConfigPatch, type SettingsLike } from './settings-persist.ts'
 
 /** Stable cordis plugin name. */
-export const name = 'novel-forge'
+export const name = 'my-novel-forge'
 
-/** Services required before the novel-forge surfaces can mount. */
+/** Services required before the my-novel-forge surfaces can mount. */
 export const inject = ['webServer', 'llm', 'systemPrompt', 'settings']
 
 /**
- * Settings namespace of the novel-forge capability — the section the web
+ * Settings namespace of the my-novel-forge capability — the section the web
  * settings surface edits.
  *
  * Legacy fallback only: from Harness 0.2 the Loader derives the section from this
@@ -38,7 +38,7 @@ export const inject = ['webServer', 'llm', 'systemPrompt', 'settings']
  * see {@link novelSettingsNamespace}. The constant stays for the browser half and
  * for installations whose entry id really is this spelling.
  */
-export const NOVEL_SETTINGS_NAMESPACE = 'dsh-novel-forge' as const
+export const NOVEL_SETTINGS_NAMESPACE = 'my-novel-forge' as const
 
 
 /** Plugin config, validated by the same-named schemastery schema. */
@@ -133,7 +133,7 @@ export const Config: z<Config> = z.object({
   announceToAgent: live(z.boolean().default(true)),
   enabled: live(z.boolean().default(true)),
   outlinePath: live(z.string().default('')),
-  outputDir: live(z.string().default(dshHomePath('novels'))),
+  outputDir: live(z.string().default(dshHomePath('my-novels'))),
   provider: live(z.string().default('deepseek-official')),
   model: live(z.string().default('deepseek-flash')),
   generateModel: live(z.string().default('')),
@@ -165,7 +165,7 @@ export const Config: z<Config> = z.object({
 /** Schema defaults, re-read for hand-built test contexts. */
 const DEFAULT_ANNOUNCE = true
 const DEFAULT_OUTLINE_PATH = ''
-const DEFAULT_OUTPUT_DIR = dshHomePath('novels')
+const DEFAULT_OUTPUT_DIR = dshHomePath('my-novels')
 const DEFAULT_PROVIDER = 'deepseek-official'
 const DEFAULT_MODEL = 'deepseek-flash'
 const DEFAULT_REASONING_EFFORT = 'off' as const
@@ -183,7 +183,7 @@ const DEFAULT_AUTO_REVIEW_AFTER_REVISE = true
 const SECTION_ORDER = 160
 
 /** Model-facing announcement: plugin presence, capabilities, and limits. */
-export const NOVEL_GUIDANCE = '本机已安装 dsh-novel-forge 插件（AI 编译小说工作台）：侧边栏「小说工坊」入口。能力：读取 docx 大纲、粘贴大纲文本或把 txt 全本拆章导入；用 LLM 提炼道藏（人设/世界观/金手指规则/写作红线）与大世界（境界/区域/势力）；生成卷计划与结构化章节计划（本章目标/剧情要点/必达项/义务合约/章末钩子）；逐章生成 3000-4000 字正文并保存为 Markdown（默认输出到插件设置里「输出目录」指定的位置，未配置时落到 Harness 数据目录下的 novels/书名）；每章自动生成摘要与编年录事实、抽取故事时间线（故事内时间/地点/在场角色/事件）、自动 AI 审稿（人设/设定/红线/文笔/爽点/逻辑/反 AI/呈现/合规九维）与作者复盘；支持按审稿意见合并修订（审稿 high + 时间线矛盾 + 张力偏差合成一轮，每章最多两轮后转人工）、去 AI 味润色、章节历史版本回滚、暗线（伏笔）管理、剧情线与角色库、张力曲线、全书一致性质检与敏感词扫描、分范围导出与项目备份、批量连写（生产单，可暂停/续跑）。限制：所有 AI 操作消耗 LLM API 额度；输出目录与模型可在插件设置中修改；章节正文质量取决于大纲完整度；张力/时间线问题默认只是建议（写日志与待办），不会自动改正文。用户提到「小说 / 大纲 / 写小说 / 章节 / 审稿 / 润色」时即指本插件，请据此协作。'
+export const NOVEL_GUIDANCE = '本机已安装 my-novel-forge 插件（AI 编译小说工作台）：侧边栏「我的小说工坊」入口。能力：读取 docx 大纲、粘贴大纲文本或把 txt 全本拆章导入；用 LLM 提炼道藏（人设/世界观/金手指规则/写作红线）与大世界（境界/区域/势力）；生成卷计划与结构化章节计划（本章目标/剧情要点/必达项/义务合约/章末钩子）；逐章生成 3000-4000 字正文并保存为 Markdown（默认输出到插件设置里「输出目录」指定的位置，未配置时落到 Harness 数据目录下的 my-novels/书名）；每章自动生成摘要与编年录事实、抽取故事时间线（故事内时间/地点/在场角色/事件）、自动 AI 审稿（人设/设定/红线/文笔/爽点/逻辑/反 AI/呈现/合规九维）与作者复盘；支持按审稿意见合并修订（审稿 high + 时间线矛盾 + 张力偏差合成一轮，每章最多两轮后转人工）、去 AI 味润色、章节历史版本回滚、暗线（伏笔）管理、剧情线与角色库、张力曲线、全书一致性质检与敏感词扫描、分范围导出与项目备份、批量连写（生产单，可暂停/续跑）。限制：所有 AI 操作消耗 LLM API 额度；输出目录与模型可在插件设置中修改；章节正文质量取决于大纲完整度；张力/时间线问题默认只是建议（写日志与待办），不会自动改正文。用户提到「小说 / 大纲 / 写小说 / 章节 / 审稿 / 润色」时即指本插件，请据此协作。'
 
 /** Resolve a config-like value into the full runtime config. */
 export function resolveConfig(value: Partial<Config> | undefined): NovelConfig {
@@ -307,7 +307,7 @@ export function apply(ctx: Context, config?: Config): void {
     // until the host reloads the plugin, the state object is still the old snapshot.
     setCurrent(persisted.config as Config)
     if (persisted.settingsWarning !== undefined) {
-      ctx.logger('novel-forge').warn('%s', persisted.settingsWarning)
+      ctx.logger('my-novel-forge').warn('%s', persisted.settingsWarning)
     }
     return { config: resolve(), ...(persisted.settingsWarning === undefined ? {} : { settingsWarning: persisted.settingsWarning }) }
   }
@@ -341,7 +341,7 @@ export function apply(ctx: Context, config?: Config): void {
     if (!(current().enabled ?? true)) return
     if (current().announceToAgent ?? DEFAULT_ANNOUNCE) {
       disposeSection = ctx.systemPrompt.section({
-        name: 'plugin:dsh-novel-forge',
+        name: 'plugin:my-novel-forge',
         order: SECTION_ORDER,
         text: NOVEL_GUIDANCE,
       })
@@ -352,7 +352,7 @@ export function apply(ctx: Context, config?: Config): void {
         const disposers = routes.map(route => ctx.webServer.register(route))
         return () => { for (const dispose of disposers) dispose() }
       },
-      'dsh-novel-forge: routes',
+      'my-novel-forge: routes',
     )
     void value
   }
@@ -362,7 +362,7 @@ export function apply(ctx: Context, config?: Config): void {
   // 调用方指定，因此用声明的常量；
   // 0.2.x 移除了它，改由 Loader 从本插件导出的 Config schema 推导配置段（段 id
   // = 该 entry 的 id），settings 服务只剩 configure/describe/update/replace/mutate。
-  // 缺失时必须静默跳过，不能让整棵插件挂载失败（此前 novel-forge 因此整包不加载）。
+  // 缺失时必须静默跳过，不能让整棵插件挂载失败（此前 my-novel-forge 因此整包不加载）。
   const settingsService = ctx.get('settings') as unknown as
     | { installSection?: (c: unknown, ns: string, schema: unknown, cfg: unknown, hooks: unknown) => void }
     | undefined

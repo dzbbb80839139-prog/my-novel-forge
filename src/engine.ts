@@ -184,7 +184,7 @@ export function loadProject(outputDir: string): ProjectState | undefined {
     return raw
   } catch (error) {
     // 项目文件损坏被静默当"无项目"会遮蔽数据丢失，留痕到服务端日志。
-    console.error(`[novel-forge] project file unreadable/corrupt: ${file} — ${(error as Error).message}`)
+    console.error(`[my-novel-forge] project file unreadable/corrupt: ${file} — ${(error as Error).message}`)
     return undefined
   }
 }
@@ -436,7 +436,7 @@ async function complete(
   const liveLabel = options.liveLabel ?? 'LLM 调用'
   const messages: Message[] = [createUserMessage({
     content: [{ type: 'text', text: options.user }],
-    source: { kind: 'plugin', plugin: 'dsh-novel-forge' },
+    source: { kind: 'plugin', plugin: 'my-novel-forge' },
   })]
   /** 用指定模型跑一次完整调用（含实况打点、token 记账与诊断日志）。 */
   const runOnce = async (model: string): Promise<string> => {
@@ -456,7 +456,7 @@ async function complete(
       },
     )
     if (converged.adjustments.length > 0) {
-      ctx.logger('novel-forge').info('模型参数收敛（%s @ %s）：%s', liveLabel, model, converged.adjustments.join('；'))
+      ctx.logger('my-novel-forge').info('模型参数收敛（%s @ %s）：%s', liveLabel, model, converged.adjustments.join('；'))
     }
     const request: GenerateOptions = {
       provider: config.provider,
@@ -496,7 +496,7 @@ async function complete(
     // Diagnostics: log the assembled block shape (reasoning-only turns yield no
     // text blocks — some models answer entirely in the reasoning channel).
     if (process.env.DSH_NOVEL_DEBUG === '1') {
-      console.error('[dsh-novel-forge] complete: finish=%j blocks=%j', JSON.stringify(finish), assembler.blocks().map(b => `${b.type}:${'text' in b ? b.text.length : '?'}`))
+      console.error('[my-novel-forge] complete: finish=%j blocks=%j', JSON.stringify(finish), assembler.blocks().map(b => `${b.type}:${'text' in b ? b.text.length : '?'}`))
     }
     const text = textFromAssembler(assembler)
     endLiveCall(live, assembler, { chars: text.length, preview: text.slice(0, 320), phase: text === '' ? 'failed' : 'completed' })
@@ -1978,7 +1978,7 @@ export async function testLlmModel(ctx: Context, provider: string, model: string
   const start = Date.now()
   const messages: Message[] = [createUserMessage({
     content: [{ type: 'text', text: '只回复两个字：OK' }],
-    source: { kind: 'plugin', plugin: 'dsh-novel-forge' },
+    source: { kind: 'plugin', plugin: 'my-novel-forge' },
   })]
   // 这里自己构造请求（为省 token 拿到首块即停），所以**必须显式过一遍能力层**：
   // 否则「测试连通」会原样下发参数，对固定温度的模型必然报错 —— 而测试连通
@@ -2344,7 +2344,7 @@ export async function* rewriteChapterStream(
 
   const messages: Message[] = [createUserMessage({
     content: [{ type: 'text', text: user }],
-    source: { kind: 'plugin', plugin: 'dsh-novel-forge' },
+    source: { kind: 'plugin', plugin: 'my-novel-forge' },
   })]
   const request: GenerateOptions = {
     provider: config.provider,
@@ -2407,7 +2407,7 @@ export async function* polishChapterStream(
   if (body === undefined) throw new NovelActionError('contract', `章节 ${chapterNo} 的正文文件不存在`)
   const messages: Message[] = [createUserMessage({
     content: [{ type: 'text', text: stripChapterHeadings(body) }],
-    source: { kind: 'plugin', plugin: 'dsh-novel-forge' },
+    source: { kind: 'plugin', plugin: 'my-novel-forge' },
   })]
   const request: GenerateOptions = {
     provider: config.provider,
@@ -2554,7 +2554,7 @@ export async function* generateChapterStream(
 
   const messages: Message[] = [createUserMessage({
     content: [{ type: 'text', text: user }],
-    source: { kind: 'plugin', plugin: 'dsh-novel-forge' },
+    source: { kind: 'plugin', plugin: 'my-novel-forge' },
   })]
   const request: GenerateOptions = {
     provider: config.provider,
@@ -2984,7 +2984,7 @@ export async function materializeAdaptedBook(
   if (outDir === '') throw new NovelActionError('contract', '未指定新书输出目录')
   const mappings = args.proposal?.mappings ?? []
   // 源文导入临时项目（复用角色/道藏/世界提炼：这些函数读取 config.outputDir 下的章节文件）。
-  const tmpDir = join(tmpdir(), 'dsh-novel-forge-adapt-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8))
+  const tmpDir = join(tmpdir(), 'my-novel-forge-adapt-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8))
   try {
     importBookTextFromText(args.text, tmpDir, bookName)
     const sourceProject = loadProject(tmpDir)
@@ -3097,7 +3097,7 @@ function applyMappingsToWorld(world: WorldState, mappings: AdaptationMapping[]):
 /** 反推大纲缺失时的兜底：用源书章节标题占位（可到工作区重新生成）。 */
 function fallbackSourceOutline(project: ProjectState): string {
   const heads = project.chapters.map(c => `第${c.no}章《${c.title}》：${c.beats !== undefined && c.beats !== '' ? c.beats : ''}`).join('\n')
-  return `# 《${project.bookName}》\n\n（反推大纲缺失，以下为章节标题占位，可在小说工坊重新生成大纲。）\n\n${heads}`
+  return `# 《${project.bookName}》\n\n（反推大纲缺失，以下为章节标题占位，可在我的小说工坊重新生成大纲。）\n\n${heads}`
 }
 
 /**
@@ -4406,7 +4406,7 @@ export function exportScope(
 ): { file: string; chars: number; chapters: number; skipped?: number[] } {
   if (scope === 'book') return exportBook(outputDir, project, format === 'json' ? 'md' : format)
   if (scope === 'project') {
-    const payload = { schema: 'dsh-novel-forge/project@1', exportedAt: new Date().toISOString(), project }
+    const payload = { schema: 'my-novel-forge/project@1', exportedAt: new Date().toISOString(), project }
     const content = JSON.stringify(payload, null, 2)
     const file = uniqueExportFile(outputDir, `《${safeFileName(project.bookName)}》项目备份`, 'json')
     writeFileSync(join(outputDir, file), content, 'utf8')

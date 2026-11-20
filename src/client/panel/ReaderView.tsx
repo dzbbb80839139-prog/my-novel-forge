@@ -72,7 +72,7 @@ export function ReaderView({
 }) {
   const prefKey = useMemo(() => {
     const id = project.bookName || 'book'
-    return `dsh-novel-forge.reader.${id}`
+    return `my-novel-forge.reader.${id}`
   }, [project.bookName])
 
   /** 可读章节（有正文落盘）：approved / written / rejected。 */

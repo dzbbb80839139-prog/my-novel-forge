@@ -1,5 +1,5 @@
 /**
- * Browser-side API client for the /api/dsh-novel-forge route family. Plain
+ * Browser-side API client for the /api/my-novel-forge route family. Plain
  * fetch, same origin; generation/rewrite/polish ride NDJSON streams read
  * incrementally.
  */
@@ -483,12 +483,12 @@ export class NovelApi {
 
   /** 切换当前书。 */
   async bookActivate(id: string): Promise<import('../protocol.ts').BookshelfSnapshot> {
-    return postJson<import('../protocol.ts').BookshelfSnapshot>('/api/dsh-novel-forge/bookshelf/activate', { id })
+    return postJson<import('../protocol.ts').BookshelfSnapshot>('/api/my-novel-forge/bookshelf/activate', { id })
   }
 
   /** 移除书架条目。 */
   async bookRemove(id: string): Promise<import('../protocol.ts').BookshelfSnapshot> {
-    return postJson<import('../protocol.ts').BookshelfSnapshot>('/api/dsh-novel-forge/bookshelf/remove', { id })
+    return postJson<import('../protocol.ts').BookshelfSnapshot>('/api/my-novel-forge/bookshelf/remove', { id })
   }
 
   /** 导入已有项目目录（Mode A）：校验 novel-project.json，登记/激活书架。 */

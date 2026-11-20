@@ -1,5 +1,5 @@
 /**
- * The novel-forge workbench panel: tabs — 工作流 (guided pipeline), 大纲
+ * The my-novel-forge workbench panel: tabs — 工作流 (guided pipeline), 大纲
  * (outline), 章节 (chapter plan + per-chapter write/review/rewrite/polish),
  * 设定库 (story bible), 伏笔 (foreshadows), 设置 (config). Generation and
  * review streams land in the progress console.
@@ -19,7 +19,7 @@ import { CmdPalette } from './CmdPalette.tsx'
 import { useConfirm, useDialogFocus } from './ConfirmDialog.tsx'
 import type { CmdAction } from './CmdPalette.tsx'
 import { showToast } from './toast.ts'
-import { Activity, BarChart3, Book, Bot, BookMarked, BookOpen, Brain, Factory, FileText, Folder, GitBranch, Library, ListTree, ScrollText, Search, Settings, Sparkles, Tag } from 'lucide-react'
+import { Activity, BarChart3, Book, Bot, BookMarked, BookOpen, Brain, Factory, FileText, Folder, GitBranch, Library, ListTree, Minus, ScrollText, Search, Settings, Sparkles, Tag, X } from 'lucide-react'
 import { AssistantTab } from './AssistantTab.tsx'
 import { AssetsTab } from './AssetsTab.tsx'
 import { AuthorHome } from './AuthorHome.tsx'
@@ -288,6 +288,8 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
   const [planCount, setPlanCount] = useState(30)
   const [busy, setBusy] = useState(false)
   const [busyLabel, setBusyLabel] = useState('')
+  /** 最小化：收起面板为右下角悬浮球，点球恢复。 */
+  const [minimized, setMinimized] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   /** 破坏性操作确认弹窗（取代 9 处 window.confirm）。渲染点在本组件 return 的根部。 */
@@ -340,7 +342,7 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
   const [wsResultMode, setWsResultMode] = useState(false)
   /** 编辑页字号（localStorage 记忆，仅影响显示）。 */
   const [editorFontSizeRaw, setEditorFontSizeRaw] = usePersistentState<number>({
-    key: 'dsh-novel-forge.editor.fontSize',
+    key: 'my-novel-forge.editor.fontSize',
     parse: r => parseIntInRange(r, 12, 24),
     serialize: String,
     fallback: 14,
@@ -348,16 +350,16 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
   const changeEditorFontSize = useCallback((next: number): void => {
     setEditorFontSizeRaw(Math.min(24, Math.max(12, next)))
   }, [setEditorFontSizeRaw])
-  /** 显示模式（跟随系统 / 强制浅色 / 强制深色），localStorage 记忆，只作用于小说工坊面板。 */
+  /** 显示模式（跟随系统 / 强制浅色 / 强制深色），localStorage 记忆，只作用于我的小说工坊面板。 */
   const [themeMode, setThemeMode] = usePersistentState<'system' | 'light' | 'dark'>({
-    key: 'dsh-novel-forge.theme.mode',
+    key: 'my-novel-forge.theme.mode',
     parse: r => parseEnum(r, ['light', 'dark', 'system'] as const),
     serialize: v => v,
     fallback: 'system',
   })
   /** 界面密度（舒适 / 紧凑 / 宽松），localStorage 记忆。 */
   const [themeDensity, setThemeDensity] = usePersistentState<'comfort' | 'compact' | 'spacious'>({
-    key: 'dsh-novel-forge.theme.density',
+    key: 'my-novel-forge.theme.density',
     parse: r => parseEnum(r, ['comfort', 'compact', 'spacious'] as const),
     serialize: v => v,
     fallback: 'comfort',
@@ -423,7 +425,7 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
 
   /** 长线管理页：子页签（剧情线 / 伏笔），localStorage 记忆。 */
   const [longlineTab, setLonglineTab] = usePersistentState<'plotlines' | 'foreshadow'>({
-    key: 'dsh-novel-forge.longline.tab',
+    key: 'my-novel-forge.longline.tab',
     parse: r => parseEnum(r, ['plotlines', 'foreshadow'] as const),
     serialize: v => v,
     fallback: 'plotlines',
@@ -433,7 +435,7 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
   }, [setLonglineTab])
   /** 编年 / 复盘页：子页签（编年录 / 复盘记录），localStorage 记忆。 */
   const [archiveTab, setArchiveTab] = usePersistentState<'facts' | 'reviews'>({
-    key: 'dsh-novel-forge.archive.tab',
+    key: 'my-novel-forge.archive.tab',
     parse: r => parseEnum(r, ['facts', 'reviews'] as const),
     serialize: v => v,
     fallback: 'facts',
@@ -443,7 +445,7 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
   }, [setArchiveTab])
   /** 本书设定页：子页签（设定库 / 大世界 / 角色库 / 编年·复盘），localStorage 记忆。 */
   const [bookTab, setBookTab] = usePersistentState<'bible' | 'world' | 'roles' | 'facts'>({
-    key: 'dsh-novel-forge.book.tab',
+    key: 'my-novel-forge.book.tab',
     parse: r => parseEnum(r, ['bible', 'world', 'roles', 'facts'] as const),
     serialize: v => v,
     fallback: 'bible',
@@ -454,7 +456,7 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
   /** 角色知情度编辑草稿（角色名 → 文本，每行一条）。 */
   /** 角色库：提炼候选（null = 未运行；localStorage 持久化，刷新不丢）。 */
   const [roleCandidates, setRoleCandidates] = usePersistentState<RoleRecord[] | null>({
-    key: 'dsh-novel-forge.role.candidates',
+    key: 'my-novel-forge.role.candidates',
     parse: r => {
       const parsed = JSON.parse(r) as RoleRecord[]
       return Array.isArray(parsed) && parsed.length > 0 ? parsed : null
@@ -659,25 +661,25 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
      原先是一个独立 useEffect 统一写 4 个键——拖拽时每帧触发，等于每帧
      4 次 JSON.stringify + setItem。现在写盘跟着各自的 setter 走，更省。 */
   const [progressPos, setProgressPos] = usePersistentState({
-    key: 'dsh-novel-forge.progress.float',
+    key: 'my-novel-forge.progress.float',
     parse: r => parseNumberRecord(r, POS_KEYS, PROGRESS_POS_DEFAULT),
     serialize: v => JSON.stringify(v),
     fallback: PROGRESS_POS_DEFAULT,
   })
   const [progressSize, setProgressSize] = usePersistentState({
-    key: 'dsh-novel-forge.progress.size',
+    key: 'my-novel-forge.progress.size',
     parse: r => parseNumberRecord(r, SIZE_KEYS, PROGRESS_SIZE_DEFAULT),
     serialize: v => JSON.stringify(v),
     fallback: PROGRESS_SIZE_DEFAULT,
   })
   const [assistantPos, setAssistantPos] = usePersistentState({
-    key: 'dsh-novel-forge.assistant.float',
+    key: 'my-novel-forge.assistant.float',
     parse: r => parseNumberRecord(r, POS_KEYS, ASSISTANT_POS_DEFAULT),
     serialize: v => JSON.stringify(v),
     fallback: ASSISTANT_POS_DEFAULT,
   })
   const [assistantSize, setAssistantSize] = usePersistentState({
-    key: 'dsh-novel-forge.assistant.size',
+    key: 'my-novel-forge.assistant.size',
     parse: r => parseNumberRecord(r, SIZE_KEYS, ASSISTANT_SIZE_DEFAULT),
     serialize: v => JSON.stringify(v),
     fallback: ASSISTANT_SIZE_DEFAULT,
@@ -3024,6 +3026,21 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
   if (effectiveBg !== '') panelBgStyle['--nf-glass-bg-image' as string] = 'url(' + effectiveBg + ')'
   if (effectiveBgBlur > 0) panelBgStyle['--nf-glass-bg-dim' as string] = String(effectiveBgBlur)
 
+  if (minimized) {
+    const bookLabel = activeBook?.bookName ?? project?.bookName ?? ''
+    return (
+      <button
+        type="button"
+        className={css.miniBall}
+        title={bookLabel !== '' ? `我的小说工坊 · ${bookLabel}（点击展开）` : '我的小说工坊（点击展开）'}
+        aria-label="展开我的小说工坊"
+        onClick={() => { setMinimized(false) }}
+      >
+        <span className={css.miniBallLogo}>书</span>
+      </button>
+    )
+  }
+
   return (
     <div ref={panelRef} className={css.panel} data-nf-mode={themeMode === 'system' ? undefined : themeMode} data-nf-density={themeDensity} style={panelBgStyle}>
       {viewMode === 'shelf' ? (
@@ -3061,6 +3078,8 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
           }}
           onChangeThemeMode={changeThemeMode}
           onChangeThemeDensity={changeThemeDensity}
+          onMinimize={() => { setMinimized(true) }}
+          onClose={() => { controller.close() }}
         />
       ) : viewMode === 'create' ? (
         /* 开书向导：独立页面 */
@@ -3113,7 +3132,7 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
               >
                 <span className={css.brandLogo}>书</span>
                 <span className={css.brandText}>
-                  <span className={css.brandName}>小说工坊<span className={css.brandEn}> · AI Novel Workbench</span></span>
+                  <span className={css.brandName}>我的小说工坊<span className={css.brandEn}> · AI Novel Workbench</span></span>
                   <span className={css.brandSub}>
                     {activeBook !== null ? `${activeBook.bookName} · ${activeBook.done}/${activeBook.total} 章` : (project?.bookName !== undefined && project.bookName !== '' ? project.bookName : '未选书')}
                   </span>
@@ -3141,7 +3160,9 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
               >
                 <span className={css.topNavNi}><Activity size={14} /></span>AI 进度
               </button>
-              <button type="button" className={css.headChip} title={tt('common.close')} aria-label={tt('common.close')} onClick={() => { controller.close() }}>×</button>
+              <button type="button" className={css.headChip} title="最小化" aria-label="最小化" onClick={() => { setMinimized(true) }}><Minus size={14} /></button>
+              <button type="button" className={css.headChip} title={tt('common.close')} aria-label={tt('common.close')} onClick={() => { controller.close() }}><X size={13} /></button>
+              <button type="button" className={css.headChipIconOnly} title={tt('common.close')} aria-label={tt('common.close')} onClick={() => { controller.close() }}>×</button>
             </header>
             {/* 工作台导航卡（悬浮）：总编台为常驻底座；主线（总纲/设定/写作/生产单）与
                 工具菜单里的辅助入口都走右滑抽屉 */}

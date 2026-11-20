@@ -1,5 +1,5 @@
 /**
- * Config-patch persistence for the novel-forge plugin.
+ * Config-patch persistence for the my-novel-forge plugin.
  *
  * Historically the plugin only knew how to write through the host settings
  * service (`ctx.settings.update`) and treated the section's name as a constant.

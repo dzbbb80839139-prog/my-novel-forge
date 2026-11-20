@@ -1,6 +1,6 @@
 /**
  * 书架（Bookshelf）— 多书管理：一本书记录一个独立输出目录。
- * 状态持久化到 <DSH_HOME>/dsh-novel-forge-bookshelf.json（跟随 dsh 配置惯例）。
+ * 状态持久化到 <DSH_HOME>/my-novel-forge-bookshelf.json（跟随 dsh 配置惯例）。
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -12,7 +12,7 @@ import { dshHome, dshHomePath } from './home.ts'
 
 /** 书架配置文件路径。 */
 export function bookshelfFile(): string {
-  return dshHomePath('dsh-novel-forge-bookshelf.json')
+  return dshHomePath('my-novel-forge-bookshelf.json')
 }
 
 interface BookshelfStore {
@@ -36,7 +36,7 @@ export function loadBookshelf(): BookshelfStore {
     return { books: parsed.books, activeBookId: parsed.activeBookId ?? null }
   } catch (error) {
     // 书架文件损坏回退默认值会遮蔽数据丢失，留痕到服务端日志。
-    console.error(`[novel-forge] bookshelf file unreadable/corrupt: ${file} — ${(error as Error).message}`)
+    console.error(`[my-novel-forge] bookshelf file unreadable/corrupt: ${file} — ${(error as Error).message}`)
     return defaultStore()
   }
 }
@@ -188,6 +188,6 @@ export function repointBookDirs(from: string, to: string): number {
  */
 export function defaultOutputDirFor(bookName: string, baseDir?: string): string {
   const clean = bookName.replace(/[\\/:*?"<>|]/g, '').trim().slice(0, 40) || '未命名小说'
-  const base = baseDir !== undefined && baseDir.trim() !== '' ? baseDir.trim() : dshHomePath('novels')
+  const base = baseDir !== undefined && baseDir.trim() !== '' ? baseDir.trim() : dshHomePath('my-novels')
   return join(base, clean)
 }

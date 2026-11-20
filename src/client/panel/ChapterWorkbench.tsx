@@ -265,7 +265,7 @@ export function ChapterWorkbench({
   const [reviewFilter, setReviewFilter] = useState<'all' | 'high' | 'unhandled'>('all')
   const issueKey = (issue: ReviewReport['issues'][number]): string => JSON.stringify([review?.reviewedAt, issue])
   const [handledIssues, setHandledIssues] = usePersistentState<Record<string, boolean>>({
-    key: `dsh-novel-forge.review-handled.${bookKey}.${chapter.no}`,
+    key: `my-novel-forge.review-handled.${bookKey}.${chapter.no}`,
     parse: raw => {
       try {
         const value: unknown = JSON.parse(raw)

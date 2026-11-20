@@ -1,4 +1,4 @@
-/* dsh-novel-forge panel styles (CSS module — auto-injected by the client bundle).
+/* my-novel-forge panel styles (CSS module — auto-injected by the client bundle).
  * Uses the real dsh theme alias variables (--dsw-alias-*) so both light and
  * dark mode render correctly. */
 
@@ -544,6 +544,70 @@ html[data-dsh-novelforge-active]:not([data-dsh-taskboard-active]):not([data-dsh-
   color: var(--nf-text);
 }
 
+/* 文本 × 关闭按钮（保留原样式，与新增图标按钮并排） */
+.headChipIconOnly {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  font-size: var(--nf-fs-12, 12px);
+  color: var(--nf-text-2, var(--nf-text));
+  background: none;
+  border: 1px solid var(--nf-line, var(--nf-border));
+  border-radius: var(--nf-r, 12px);
+  cursor: pointer;
+}
+
+.headChipIconOnly:hover {
+  background: var(--nf-bg-inset, var(--nf-bg-raise));
+  color: var(--nf-text);
+}
+
+/* 最小化悬浮球：面板收起后浮在会话区右下角，点击展开。
+   .view 铺满会话列且带背景，最小化时须透明+穿透，否则会盖住对话内容。 */
+.view:has(> .miniBall) {
+  background: transparent;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.miniBall {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: calc(var(--nf-z-panel, 60) + 1);
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid var(--nf-line, var(--nf-border));
+  background: color-mix(in srgb, var(--nf-bg-raise, var(--nf-bg)) 94%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--nf-shadow, 0 4px 16px rgba(0, 0, 0, 0.18));
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.miniBall:hover {
+  background: var(--nf-bg-inset, var(--nf-bg-raise));
+}
+
+.miniBallLogo {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--nf-bg-inset, var(--nf-bg));
+  border: 1px solid var(--nf-line, var(--nf-border));
+  font-family: var(--nf-font-display, Georgia, 'Songti SC', SimSun, serif);
+  font-weight: 700;
+  font-size: var(--nf-fs-16, 16px);
+  color: var(--nf-accent);
+}
+
 .topNavLabel {
   font-size: var(--nf-fs-caption, 11px);
   letter-spacing: 0.14em;
@@ -1062,7 +1126,7 @@ html[data-dsh-novelforge-active]:not([data-dsh-taskboard-active]):not([data-dsh-
 }
 
 
-/* demo 风格：侧栏标题区（Logo + 小说工坊 + 当前书名） */
+/* demo 风格：侧栏标题区（Logo + 我的小说工坊 + 当前书名） */
 .navTitle {
   cursor: pointer;
   display: flex;
@@ -2485,6 +2549,22 @@ select.input {
 .authorTopNav .navAboutRow { display: inline-flex; align-items: center; gap: var(--nf-space-6, 6px); }
 
 .authorContent { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+
+/* 子页返回上一级条：所有非首页子页顶部统一入口 */
+.subPageBackBar { flex: none; display: flex; justify-content: flex-start; padding: 10px 0 2px; }
+.subPageBackBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  font-size: var(--nf-fs-12, 12px);
+  color: var(--nf-text-2, var(--nf-text));
+  background: var(--nf-bg-raise);
+  border: 1px solid var(--nf-line, var(--nf-border));
+  border-radius: var(--nf-r, 12px);
+  cursor: pointer;
+}
+.subPageBackBtn:hover { background: var(--nf-bg-inset, var(--nf-bg-raise)); color: var(--nf-text); }
 
 
 /* ---- 作者级分组导航（1:1 对齐 design-sample-workbench.html 的 .author-nav / .nav-group / .nav-btn） ---- */

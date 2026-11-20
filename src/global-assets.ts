@@ -11,7 +11,7 @@ interface GlobalAssets {
   modes: ProgressionMode[]
 }
 
-const FILE = dshHomePath('novel-forge-global-assets.json')
+const FILE = dshHomePath('my-novel-forge-global-assets.json')
 let cache: GlobalAssets | null = null
 /** 缓存对应的文件 mtime（ms）；-1 = 文件不存在。 */
 let cacheMtime = -1

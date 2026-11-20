@@ -1,5 +1,5 @@
 /**
- * The /api/dsh-novel-forge route family: status, docx outline loading, LLM
+ * The /api/my-novel-forge route family: status, docx outline loading, LLM
  * story-bible extraction, volume planning, chapter planning, streaming
  * generation / rewrite / polish (NDJSON frames), review, summaries,
  * foreshadows, export, chapter reading, config patching, and opening the
@@ -442,7 +442,7 @@ function argvProfile(): string | undefined {
 }
 
 /**
- * Build every /api/dsh-novel-forge route.
+ * Build every /api/my-novel-forge route.
  * @param deps - context, config resolver, config patcher.
  * @returns the route list.
  */
@@ -840,16 +840,16 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
             ...(wantTimeline ? { model: config.auditModel || config.model } : {}),
           })
         } catch (error) {
-          console.warn('[dsh-novel-forge] summary/facts/timeline failed:', (error as Error).message)
+          console.warn('[my-novel-forge] summary/facts/timeline failed:', (error as Error).message)
         }
         // 伏笔落地标记：正文中命中 planned 伏笔关键词 → 自动标为 planted（暗线管理页与正文同步）。
         try {
           const marked = markForeshadowPlanted(project, config.outputDir, no)
           if (marked > 0) {
-            console.log(`[dsh-novel-forge] 第${no}章已埋伏笔 ${marked} 条`)
+            console.log(`[my-novel-forge] 第${no}章已埋伏笔 ${marked} 条`)
           }
         } catch (error) {
-          console.warn('[dsh-novel-forge] markForeshadowPlanted failed:', (error as Error).message)
+          console.warn('[my-novel-forge] markForeshadowPlanted failed:', (error as Error).message)
         }
         if (!(body?.skipReview === true) && (config.autoReview ?? true)) {
           const report = await reviewChapter(ctx, config, project, config.outputDir, no)
@@ -885,7 +885,7 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
               send({ type: 'author-review', no, review })
             }
           } catch (error) {
-            console.warn('[dsh-novel-forge] author review failed:', (error as Error).message)
+            console.warn('[my-novel-forge] author review failed:', (error as Error).message)
           }
         }
         res.end()
@@ -2487,7 +2487,7 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
   // --------------------------------------------------- bookshelf activate
   const bookshelfActivateRoute: WebRoute = {
     kind: 'exact',
-    path: '/api/dsh-novel-forge/bookshelf/activate',
+    path: '/api/my-novel-forge/bookshelf/activate',
     handler: async (req, res) => {
       if (!guard(req, res, 'POST')) return
       const body = await readJsonBody<BookActivateRequest>(req)
@@ -2507,7 +2507,7 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
   // ---------------------------------------------------- bookshelf remove
   const bookshelfRemoveRoute: WebRoute = {
     kind: 'exact',
-    path: '/api/dsh-novel-forge/bookshelf/remove',
+    path: '/api/my-novel-forge/bookshelf/remove',
     handler: async (req, res) => {
       if (!guard(req, res, 'POST')) return
       const body = await readJsonBody<BookRemoveRequest>(req)
@@ -3356,7 +3356,7 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
           saveProject(config.outputDir, project)
           send({ type: 'author-review', no: chapter.no, review })
         } catch (error) {
-          console.warn(`[dsh-novel-forge] author backfill ch.${chapter.no} failed:`, (error as Error).message)
+          console.warn(`[my-novel-forge] author backfill ch.${chapter.no} failed:`, (error as Error).message)
         }
       }
       project.updatedAt = new Date().toISOString()
@@ -3419,7 +3419,7 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
       if (!guard(req, res, 'POST')) return
       const profileDir = dshHomePath('profiles', argvProfile() ?? 'web')
       const response: PluginUpdateResponse = await new Promise((resolve) => {
-        const child = spawn('pnpm', ['add', '@waterwx/dsh-novel-forge@latest'], { cwd: profileDir, shell: true })
+        const child = spawn('pnpm', ['add', '@local/my-novel-forge@latest'], { cwd: profileDir, shell: true })
         let acc = ''
         child.stdout.on('data', (d: Buffer) => { acc += String(d) })
         child.stderr.on('data', (d: Buffer) => { acc += String(d) })
@@ -4125,7 +4125,7 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
   }
 
   // ------------------------------------------ theme custom background (upload + serve)
-  const THEME_BG_DIR = dshHomePath('dsh-novel-forge-assets')
+  const THEME_BG_DIR = dshHomePath('my-novel-forge-assets')
   const MIME_BY_EXT: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', webp: 'image/webp', gif: 'image/gif' }
 
   const themeBackgroundUploadRoute: WebRoute = {

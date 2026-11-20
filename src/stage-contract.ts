@@ -66,7 +66,7 @@ export function computeBookStage(project: ProjectState | undefined): BookStage {
       recommend: [],
       // 章节规划不在助手的动作集里：通用「继续」不应被解释成改写总纲或设定。
       allow: [],
-      reason: '有道藏但还没有章节计划（规划在「小说工坊」面板或生产单里执行）',
+      reason: '有道藏但还没有章节计划（规划在「我的小说工坊」面板或生产单里执行）',
     }
   }
   const generating = chapters.filter(c => c.status === 'generating')

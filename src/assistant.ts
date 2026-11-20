@@ -766,7 +766,7 @@ function historyToMessages(history: AssistantMessage[]): Message[] {
     if (entry.role === 'user') {
       messages.push(createUserMessage({
         content: [{ type: 'text', text: entry.content }],
-        source: { kind: 'plugin', plugin: 'dsh-novel-forge' },
+        source: { kind: 'plugin', plugin: 'my-novel-forge' },
       }))
     } else if (entry.role === 'assistant') {
       messages.push(createAssistantMessage({
@@ -781,7 +781,7 @@ function historyToMessages(history: AssistantMessage[]): Message[] {
         : entry.content
       messages.push(createUserMessage({
         content: [{ type: 'text', text: `【工具 ${entry.tool ?? ''} 的执行结果】\n${body}` }],
-        source: { kind: 'plugin', plugin: 'dsh-novel-forge' },
+        source: { kind: 'plugin', plugin: 'my-novel-forge' },
       }))
     }
   }

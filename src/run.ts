@@ -338,8 +338,8 @@ export class ProductionRunner {
           timeline: wantTimeline,
           ...(wantTimeline ? { model: config.auditModel || config.model } : {}),
         })
-      } catch (e) { console.warn('[dsh-novel-forge] run summary/facts/timeline:', (e as Error).message) }
-      try { markForeshadowPlanted(project, outputDir, no) } catch (e) { console.warn('[dsh-novel-forge] run foreshadow:', (e as Error).message) }
+      } catch (e) { console.warn('[my-novel-forge] run summary/facts/timeline:', (e as Error).message) }
+      try { markForeshadowPlanted(project, outputDir, no) } catch (e) { console.warn('[my-novel-forge] run foreshadow:', (e as Error).message) }
       if (config.autoReview ?? true) {
         const report = await reviewChapter(ctx, config, project, outputDir, no)
         if (this.state !== null) this.state.stats[wasError ? 'regenerated' : 'generated']++
@@ -379,7 +379,7 @@ export class ProductionRunner {
           }
         } catch (e) {
           // 复盘失败不阻断正文（正文已落盘并审过），但必须让作者知道这章缺了什么。
-          console.warn('[dsh-novel-forge] run author review:', (e as Error).message)
+          console.warn('[my-novel-forge] run author review:', (e as Error).message)
           this.log(`第${no}章 作者复盘失败（正文已保留，可稍后补跑复盘）：${(e as Error).message}`)
         }
       }

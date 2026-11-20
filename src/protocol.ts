@@ -1,170 +1,170 @@
 /**
- * dsh-novel-forge — shared protocol between the host half (Node) and the
+ * my-novel-forge — shared protocol between the host half (Node) and the
  * browser half (web GUI). Route paths, request/response shapes, the project
  * state file format, and the NDJSON generation stream frames all live here so
  * both halves spell exactly one vocabulary.
  */
 
-/** The /api/dsh-novel-forge route family (same-origin, loopback-fenced). */
+/** The /api/my-novel-forge route family (same-origin, loopback-fenced). */
 export const NOVEL_API = {
-  status: '/api/dsh-novel-forge/status',
-  loadOutline: '/api/dsh-novel-forge/load-outline',
-  saveOutline: '/api/dsh-novel-forge/save-outline',
-  plan: '/api/dsh-novel-forge/plan',
-  volumes: '/api/dsh-novel-forge/volumes',
-  bible: '/api/dsh-novel-forge/bible',
-  assets: '/api/dsh-novel-forge/assets',
-  styleEngine: '/api/dsh-novel-forge/style-engine',
-  styleFormula: '/api/dsh-novel-forge/style-formula',
-  styleDetect: '/api/dsh-novel-forge/style-detect',
-  knowledge: '/api/dsh-novel-forge/knowledge',
-  bookAnalysis: '/api/dsh-novel-forge/book-analysis',
-  ideaInspiration: '/api/dsh-novel-forge/idea-inspiration',
-  ideaInspirationMarket: '/api/dsh-novel-forge/idea-inspiration/market',
-  director: '/api/dsh-novel-forge/director',
-  directorTodos: '/api/dsh-novel-forge/director/todos',
-  llmLive: '/api/dsh-novel-forge/llm-live/stream',
+  status: '/api/my-novel-forge/status',
+  loadOutline: '/api/my-novel-forge/load-outline',
+  saveOutline: '/api/my-novel-forge/save-outline',
+  plan: '/api/my-novel-forge/plan',
+  volumes: '/api/my-novel-forge/volumes',
+  bible: '/api/my-novel-forge/bible',
+  assets: '/api/my-novel-forge/assets',
+  styleEngine: '/api/my-novel-forge/style-engine',
+  styleFormula: '/api/my-novel-forge/style-formula',
+  styleDetect: '/api/my-novel-forge/style-detect',
+  knowledge: '/api/my-novel-forge/knowledge',
+  bookAnalysis: '/api/my-novel-forge/book-analysis',
+  ideaInspiration: '/api/my-novel-forge/idea-inspiration',
+  ideaInspirationMarket: '/api/my-novel-forge/idea-inspiration/market',
+  director: '/api/my-novel-forge/director',
+  directorTodos: '/api/my-novel-forge/director/todos',
+  llmLive: '/api/my-novel-forge/llm-live/stream',
   /** 查看某次调用实际发送的 Prompt（按 sessionId）。 */
-  llmPrompt: '/api/dsh-novel-forge/llm-live/prompt',
+  llmPrompt: '/api/my-novel-forge/llm-live/prompt',
   /** 清零本次运行的用量账本。 */
-  usageReset: '/api/dsh-novel-forge/usage/reset',
+  usageReset: '/api/my-novel-forge/usage/reset',
   /** 章节历史版本（快照）。 */
-  snapshot: '/api/dsh-novel-forge/snapshot',
+  snapshot: '/api/my-novel-forge/snapshot',
   /** 修订指令合并（POST：汇总审稿/时间线/张力为一轮）。 */
-  revisionPlan: '/api/dsh-novel-forge/revision/plan',
+  revisionPlan: '/api/my-novel-forge/revision/plan',
   /** 张力曲线（GET 数据 / POST 设置）。 */
-  tension: '/api/dsh-novel-forge/tension',
-  styleHistory: '/api/dsh-novel-forge/style-history',
+  tension: '/api/my-novel-forge/tension',
+  styleHistory: '/api/my-novel-forge/style-history',
   /** 风格目标卡：GET 当前卡；POST {action:'distill-archived'|'distill-sample'|'clear'}。 */
-  styleProfile: '/api/dsh-novel-forge/style-profile',
+  styleProfile: '/api/my-novel-forge/style-profile',
   /** 提示词槽位（GET 列表 / POST 写入）。 */
-  promptSlots: '/api/dsh-novel-forge/prompt-slots',
+  promptSlots: '/api/my-novel-forge/prompt-slots',
   /** 取名器：POST {action:'generate'} 生成候选；GET 名字库；POST {action:'adopt'|'discard'|'clear'} 维护。 */
-  nameForge: '/api/dsh-novel-forge/name-forge',
+  nameForge: '/api/my-novel-forge/name-forge',
   /** 故事时间线（GET 列表 / POST 操作）。 */
-  timeline: '/api/dsh-novel-forge/timeline',
-  marketRadar: '/api/dsh-novel-forge/market-radar',
-  marketRadarScan: '/api/dsh-novel-forge/market-radar/scan',
-  marketRadarApply: '/api/dsh-novel-forge/market-radar/apply',
-  marketRadarSync: '/api/dsh-novel-forge/market-radar/foundation-sync',
-  marketRadarBrief: '/api/dsh-novel-forge/market-radar/brief',
-  generate: '/api/dsh-novel-forge/generate',
-  review: '/api/dsh-novel-forge/review',
-  rewrite: '/api/dsh-novel-forge/rewrite',
-  polish: '/api/dsh-novel-forge/polish',
+  timeline: '/api/my-novel-forge/timeline',
+  marketRadar: '/api/my-novel-forge/market-radar',
+  marketRadarScan: '/api/my-novel-forge/market-radar/scan',
+  marketRadarApply: '/api/my-novel-forge/market-radar/apply',
+  marketRadarSync: '/api/my-novel-forge/market-radar/foundation-sync',
+  marketRadarBrief: '/api/my-novel-forge/market-radar/brief',
+  generate: '/api/my-novel-forge/generate',
+  review: '/api/my-novel-forge/review',
+  rewrite: '/api/my-novel-forge/rewrite',
+  polish: '/api/my-novel-forge/polish',
   /** 采纳待确认草稿（润色/重写产物）覆盖正文文件。 */
-  draftApply: '/api/dsh-novel-forge/draft/apply',
+  draftApply: '/api/my-novel-forge/draft/apply',
   /** 放弃待确认草稿，保留原稿。 */
-  draftDiscard: '/api/dsh-novel-forge/draft/discard',
-  summary: '/api/dsh-novel-forge/summary',
-  foreshadow: '/api/dsh-novel-forge/foreshadow',
-  exportBook: '/api/dsh-novel-forge/export',
-  chapter: '/api/dsh-novel-forge/chapter',
+  draftDiscard: '/api/my-novel-forge/draft/discard',
+  summary: '/api/my-novel-forge/summary',
+  foreshadow: '/api/my-novel-forge/foreshadow',
+  exportBook: '/api/my-novel-forge/export',
+  chapter: '/api/my-novel-forge/chapter',
   /** 审查任意正文文本（作者手动编辑后，不落盘）。 */
-  chapterCheck: '/api/dsh-novel-forge/chapter/check',
+  chapterCheck: '/api/my-novel-forge/chapter/check',
   /** 保存手动编辑的正文（自动备份 .bak）。 */
-  chapterSave: '/api/dsh-novel-forge/chapter/save',
+  chapterSave: '/api/my-novel-forge/chapter/save',
   /** 补写本章计划的固定六项（目标 / 必达 / 保持 / 硬事实 / 结尾钩子 / 剧情要点）。 */
-  chapterPlan: '/api/dsh-novel-forge/chapter/plan',
-  assistant: '/api/dsh-novel-forge/assistant',
-  assistantHistory: '/api/dsh-novel-forge/assistant-history',
+  chapterPlan: '/api/my-novel-forge/chapter/plan',
+  assistant: '/api/my-novel-forge/assistant',
+  assistantHistory: '/api/my-novel-forge/assistant-history',
   /** 清空助手对话记录。 */
-  assistantClear: '/api/dsh-novel-forge/assistant/clear',
-  bookshelf: '/api/dsh-novel-forge/bookshelf',
+  assistantClear: '/api/my-novel-forge/assistant/clear',
+  bookshelf: '/api/my-novel-forge/bookshelf',
   /** 导入已有项目目录（含 novel-project.json）到书架。 */
-  bookshelfImportDir: '/api/dsh-novel-forge/bookshelf/import-dir',
+  bookshelfImportDir: '/api/my-novel-forge/bookshelf/import-dir',
   /** 导入 txt/md 全本：拆章建项目并登记书架。 */
-  bookshelfImportText: '/api/dsh-novel-forge/bookshelf/import-text',
+  bookshelfImportText: '/api/my-novel-forge/bookshelf/import-text',
   /** 导入 txt/md 全本：拆章预览（不落盘）。 */
-  bookshelfImportTextPreview: '/api/dsh-novel-forge/bookshelf/import-text/preview',
+  bookshelfImportTextPreview: '/api/my-novel-forge/bookshelf/import-text/preview',
   /** LLM 模型连通性测试：真实最小调用，验证 Key / 端点 / 模型可用。 */
-  llmTest: '/api/dsh-novel-forge/llm-test',
+  llmTest: '/api/my-novel-forge/llm-test',
   /** 添加模型：厂商直填 key 或自定义路由，写进 DSH 凭据与 llm-pi-ai 路由。 */
-  addModel: '/api/dsh-novel-forge/llm-add',
+  addModel: '/api/my-novel-forge/llm-add',
   /** 运行时厂商目录（DSH pi-ai 可配置提供方 + 内置适配器）。 */
-  llmVendors: '/api/dsh-novel-forge/llm-vendors',
+  llmVendors: '/api/my-novel-forge/llm-vendors',
   /** 查询某个 provider 当前可用的模型（添加成功后可即时刷新）。 */
-  llmModels: '/api/dsh-novel-forge/llm-models',
+  llmModels: '/api/my-novel-forge/llm-models',
   /** 已注册的提供方路由列表（提供方管理）。 */
-  llmProviders: '/api/dsh-novel-forge/llm-providers',
+  llmProviders: '/api/my-novel-forge/llm-providers',
   /** 移除一个提供方。 */
-  llmRemove: '/api/dsh-novel-forge/llm-remove',
+  llmRemove: '/api/my-novel-forge/llm-remove',
   /** 重置项目（可选携带新大纲）：清空设定/卷/章节/伏笔/资产/事实库。 */
-  reset: '/api/dsh-novel-forge/reset',
+  reset: '/api/my-novel-forge/reset',
   /** 全书一致性质检：LLM 扫描已生成章节，输出矛盾问题清单。 */
-  audit: '/api/dsh-novel-forge/audit',
+  audit: '/api/my-novel-forge/audit',
   /** 角色卡刷新：基于事实库与各章摘要聚合角色当前状态。 */
-  charactersRefresh: '/api/dsh-novel-forge/characters/refresh',
+  charactersRefresh: '/api/my-novel-forge/characters/refresh',
   /** 事实库回填：对历史已生成章节批量抽取事实（旧章节无事实记录时用）。 */
-  factsBackfill: '/api/dsh-novel-forge/facts/backfill',
+  factsBackfill: '/api/my-novel-forge/facts/backfill',
   /** 道藏局部修补（如世界观规则编辑）。 */
-  biblePatch: '/api/dsh-novel-forge/bible/patch',
+  biblePatch: '/api/my-novel-forge/bible/patch',
   /** 小说简介：生成（AI）/补全（AI）/保存。 */
-  blurb: '/api/dsh-novel-forge/blurb',
+  blurb: '/api/my-novel-forge/blurb',
   /** 重命名当前书（同步项目与书架条目）。 */
-  rename: '/api/dsh-novel-forge/rename',
+  rename: '/api/my-novel-forge/rename',
   /** 大世界：提炼 / 保存结构化数据（境界/区域/势力）。 */
-  world: '/api/dsh-novel-forge/world',
+  world: '/api/my-novel-forge/world',
   /** 封面：GET 读取（dataUrl）/ POST 上传或移除。 */
-  cover: '/api/dsh-novel-forge/blurb/cover',
+  cover: '/api/my-novel-forge/blurb/cover',
   /** 剧情线管理：增删改 + 关联章节。 */
-  plotlines: '/api/dsh-novel-forge/plotlines',
+  plotlines: '/api/my-novel-forge/plotlines',
   /** 角色库：提炼 / 采纳 / 更新 / 删除。 */
-  roles: '/api/dsh-novel-forge/roles',
+  roles: '/api/my-novel-forge/roles',
   /** 作者复盘补跑：对已写章节补齐 authorReview（全书流式 / 单章 JSON）。 */
-  reviewBackfill: '/api/dsh-novel-forge/review/backfill',
+  reviewBackfill: '/api/my-novel-forge/review/backfill',
   /** 章节复位：generating 卡死 → pending（可重新生成）。 */
-  chapterReset: '/api/dsh-novel-forge/chapter/reset',
+  chapterReset: '/api/my-novel-forge/chapter/reset',
   /** 章节直接通过：作者对 rejected/written 章节行使最终决定权。 */
-  chapterApprove: '/api/dsh-novel-forge/chapter/approve',
+  chapterApprove: '/api/my-novel-forge/chapter/approve',
   /** 敏感词检查：全书已写章节或指定文本。 */
-  sensitiveCheck: '/api/dsh-novel-forge/sensitive-check',
+  sensitiveCheck: '/api/my-novel-forge/sensitive-check',
   /** 开书想法 → 补全大纲：输入一句话想法，生成 2-3 个可选大纲方案。 */
-  outlineSuggest: '/api/dsh-novel-forge/outline/suggest',
+  outlineSuggest: '/api/my-novel-forge/outline/suggest',
   /** 反推大纲：从已写章节正文反向生成全书总纲（NDJSON 流）。 */
-  outlineReverse: '/api/dsh-novel-forge/outline/reverse',
+  outlineReverse: '/api/my-novel-forge/outline/reverse',
   /** 拆书分析：对已写章节做结构/人物/文风/卖点四维体检（两阶段：源笔记→分节分析）。 */
-  breakdown: '/api/dsh-novel-forge/breakdown',
+  breakdown: '/api/my-novel-forge/breakdown',
   /** 生产单：启动批量生产（计划补足 + 逐章生成 + 被拒分级处理）。 */
-  runStart: '/api/dsh-novel-forge/run/start',
+  runStart: '/api/my-novel-forge/run/start',
   /** 生产单控制：pause / resume / stop。 */
-  runControl: '/api/dsh-novel-forge/run/control',
+  runControl: '/api/my-novel-forge/run/control',
   /** 生产单状态（含进度统计与日志）。 */
-  runStatus: '/api/dsh-novel-forge/run/status',
-  config: '/api/dsh-novel-forge/config',
+  runStatus: '/api/my-novel-forge/run/status',
+  config: '/api/my-novel-forge/config',
   /** 输出目录迁移：dryRun 预览 / 确认后搬文件并联动配置与书架。 */
-  moveOutputDir: '/api/dsh-novel-forge/move-output-dir',
+  moveOutputDir: '/api/my-novel-forge/move-output-dir',
   /** 本书参数：POST {} 读取；POST {patch} 合并保存（存 novel-project.json）。 */
-  bookSettings: '/api/dsh-novel-forge/book-settings',
-  openFolder: '/api/dsh-novel-forge/open-folder',
+  bookSettings: '/api/my-novel-forge/book-settings',
+  openFolder: '/api/my-novel-forge/open-folder',
   /** 插件自更新：在 DSH profile 目录拉取最新 npm 版（下载后需重启 DSH 生效）。 */
-  pluginUpdate: '/api/dsh-novel-forge/plugin/update',
+  pluginUpdate: '/api/my-novel-forge/plugin/update',
   /** 作者资产库/总数据：读取个人跨书资产（笔法/红线/套路/角色模板/世界观模板）。 */
-  authorAssets: '/api/dsh-novel-forge/author-assets',
+  authorAssets: '/api/my-novel-forge/author-assets',
   /** 作者资产库：新增/更新一条资产（upsert by id）。 */
-  authorAssetsUpsert: '/api/dsh-novel-forge/author-assets/upsert',
+  authorAssetsUpsert: '/api/my-novel-forge/author-assets/upsert',
   /** 作者资产库：删除一条资产。 */
-  authorAssetsRemove: '/api/dsh-novel-forge/author-assets/remove',
+  authorAssetsRemove: '/api/my-novel-forge/author-assets/remove',
   /** 作者资产库：导入默认（书架书的写作资产/角色 + 内置全局库）批量沉淀。 */
-  authorAssetsImportDefault: '/api/dsh-novel-forge/author-assets/import-default',
+  authorAssetsImportDefault: '/api/my-novel-forge/author-assets/import-default',
   /** 改编模式：上传全文 → 分析 → 原文设定卡片/可改范围矩阵。 */
-  adaptAnalyze: '/api/dsh-novel-forge/adapt/analyze',
+  adaptAnalyze: '/api/my-novel-forge/adapt/analyze',
   /** 改编模式：确认要改的维度 → 生成映射表/改编规则/联动影响清单。 */
-  adaptPropose: '/api/dsh-novel-forge/adapt/propose',
+  adaptPropose: '/api/my-novel-forge/adapt/propose',
   /** 改编模式：执行术语替换（全局替换 + 命中统计 + 改编文本预览）。 */
-  adaptExecute: '/api/dsh-novel-forge/adapt/execute',
+  adaptExecute: '/api/my-novel-forge/adapt/execute',
   /** 改编模式：保存改编全文为新书（原书保留，登记书架）。 */
-  adaptSave: '/api/dsh-novel-forge/adapt/save',
+  adaptSave: '/api/my-novel-forge/adapt/save',
   /** 改编模式：从源全文 + 编辑后方案提炼新书资料并保存为「待写新书」。 */
-  adaptMaterialize: '/api/dsh-novel-forge/adapt/materialize',
+  adaptMaterialize: '/api/my-novel-forge/adapt/materialize',
   /** 改编模式：rewrite 逐章重写（NDJSON 流式进度）。 */
-  adaptRewriteStream: '/api/dsh-novel-forge/adapt/rewrite-stream',
+  adaptRewriteStream: '/api/my-novel-forge/adapt/rewrite-stream',
   /** 改编模式：把预览/微调后的新书资料写入并登记书架。 */
-  adaptMaterializeSave: '/api/dsh-novel-forge/adapt/materialize-save',
+  adaptMaterializeSave: '/api/my-novel-forge/adapt/materialize-save',
   /** 主题自定义背景：上传图片（POST，存盘并返回服务端 URL）。 */
-  themeBackgroundUpload: '/api/dsh-novel-forge/theme/background',
+  themeBackgroundUpload: '/api/my-novel-forge/theme/background',
   /** 主题自定义背景：读取已上传文件（GET prefix，/theme/background/<name>）。 */
-  themeBackgroundGet: '/api/dsh-novel-forge/theme/background',
+  themeBackgroundGet: '/api/my-novel-forge/theme/background',
 } as const
 
 /** 书架：一本书的条目。 */

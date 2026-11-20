@@ -1,6 +1,6 @@
 /**
  * 作者资产库/总数据（跨书）— 按作者维度聚合的可复用资产。
- * 与书架同惯例持久化到 <DSH_HOME>/dsh-novel-forge-author-assets.json。
+ * 与书架同惯例持久化到 <DSH_HOME>/my-novel-forge-author-assets.json。
  * 提供读取/持久化/新增或更新/删除，以及「导入默认」：把书架书的写作资产/角色 + 
  * 内置全局库（题材/反AI规则/风格模板/推进模式）批量沉淀成资产条目（默认库）。
  */
@@ -15,7 +15,7 @@ import { dshHome, dshHomePath } from './home.ts'
 
 /** 作者资产库配置文件路径。 */
 export function authorAssetsFile(): string {
-  return dshHomePath('dsh-novel-forge-author-assets.json')
+  return dshHomePath('my-novel-forge-author-assets.json')
 }
 
 /** 默认空资产库。 */
@@ -35,7 +35,7 @@ export function loadAuthorAssets(): AuthorAssetLibrary {
     return { version: 1, items: parsed.items }
   } catch (error) {
     // 资产库损坏回退默认值会遮蔽数据丢失，留痕到服务端日志。
-    console.error(`[novel-forge] author assets file unreadable/corrupt: ${file} — ${(error as Error).message}`)
+    console.error(`[my-novel-forge] author assets file unreadable/corrupt: ${file} — ${(error as Error).message}`)
     return defaultLibrary()
   }
 }

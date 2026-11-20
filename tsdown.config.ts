@@ -1,5 +1,5 @@
 /**
- * tsdown build for dsh-novel-forge. Two artifacts:
+ * tsdown build for my-novel-forge. Two artifacts:
  *  - lib/index.js — Node half (host): ESM, externals resolved by the host
  *    loader (profile node_modules).
  *  - lib/client.js — browser half: CJS closure handed to
@@ -16,7 +16,7 @@ import type { UserConfig } from 'tsdown'
 import { transform } from 'lightningcss'
 
 /** Plugin id (package name) stamped into the module-loader handoff. */
-const PLUGIN_ID = '@waterwx/dsh-novel-forge'
+const PLUGIN_ID = '@local/my-novel-forge'
 
 /** Package version stamped into the client bundle (about section + updater). */
 const PKG_VERSION: string = JSON.parse(readFileSync(resolvePath(process.cwd(), 'package.json'), 'utf8')).version ?? '0.0.0'

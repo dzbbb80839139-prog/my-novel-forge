@@ -61,8 +61,8 @@ export function SettingsView({ api, variant = 'page', onSettingsTab, onEditorFon
   const [movePreview, setMovePreview] = useState<MoveOutputDirResponse | null>(null);
   const [moveBusy, setMoveBusy] = useState(false);
   const [moveError, setMoveError] = useState('');
-  const [settingsTab, setSettingsTabState] = useState<SettingsTab>(() => readLS<SettingsTab>('dsh-novel-forge.settings.tab', 'model', ['model','files','appearance'] as const));
-  const [editorFontSize, setEditorFontSize] = useState<number>(() => { try { const v = Number(window.localStorage.getItem('dsh-novel-forge.editor.fontSize')); return v >= 12 && v <= 24 ? v : 14 } catch { return 14 } });
+  const [settingsTab, setSettingsTabState] = useState<SettingsTab>(() => readLS<SettingsTab>('my-novel-forge.settings.tab', 'model', ['model','files','appearance'] as const));
+  const [editorFontSize, setEditorFontSize] = useState<number>(() => { try { const v = Number(window.localStorage.getItem('my-novel-forge.editor.fontSize')); return v >= 12 && v <= 24 ? v : 14 } catch { return 14 } });
   const loadConfig = async (): Promise<void> => {
     try {
       const res = await api.status();
@@ -72,7 +72,7 @@ export function SettingsView({ api, variant = 'page', onSettingsTab, onEditorFon
   };
   useEffect(() => { void loadConfig() }, []);
 
-  useEffect(() => { try { window.localStorage.setItem('dsh-novel-forge.settings.tab', settingsTab) } catch { /* ignore */ } }, [settingsTab]);
+  useEffect(() => { try { window.localStorage.setItem('my-novel-forge.settings.tab', settingsTab) } catch { /* ignore */ } }, [settingsTab]);
 
   const changeSettingsTab = (next: SettingsTab): void => { setSettingsTabState(next); onSettingsTab?.(next) };
 
@@ -134,7 +134,7 @@ export function SettingsView({ api, variant = 'page', onSettingsTab, onEditorFon
   // 显示模式/密度由全局（NovelPanel）统一管理，设置页只调用 onChange 回调。
   const changeEditorFont = (n: number): void => {
     const v = Math.min(24, Math.max(12, n)); setEditorFontSize(v);
-    try { window.localStorage.setItem('dsh-novel-forge.editor.fontSize', String(v)) } catch { /* ignore */ }
+    try { window.localStorage.setItem('my-novel-forge.editor.fontSize', String(v)) } catch { /* ignore */ }
     onEditorFontSize?.(v);
   };
   const bgFileRef = useRef<HTMLInputElement | null>(null);
@@ -294,14 +294,14 @@ export function SettingsView({ api, variant = 'page', onSettingsTab, onEditorFon
               >
                 {RUN_CHIP_MODE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
-              <span className={css.meta}>固定在窗口右上角，显示生产单 生成中 / 已暂停 / 批完成 / 出错，点击可打开小说工坊。「关闭」时同时停掉状态轮询。存于浏览器本地，即时生效。</span>
+              <span className={css.meta}>固定在窗口右上角，显示生产单 生成中 / 已暂停 / 批完成 / 出错，点击可打开我的小说工坊。「关闭」时同时停掉状态轮询。存于浏览器本地，即时生效。</span>
             </div>
             <div className={`${css.row} ${css.rowEnd}`}><button type="button" className={css.button} onClick={resetTheme}><RotateCcw size={14} style={{ verticalAlign: -2 }} /> 恢复默认主题</button></div>
           </div>
 
           <div className={css.card + ' ' + css.settingsCard} style={{ gap: 'var(--nf-space-12)' }}>
             <span className={css.cardTitle}><Image size={18} style={{ verticalAlign: -3 }} /> 自定义背景</span>
-            <span className={css.meta}>填图片 URL 或上传图片作为小说工坊背景（首页 + 书内）。留空 = 使用主题默认背景。</span>
+            <span className={css.meta}>填图片 URL 或上传图片作为我的小说工坊背景（首页 + 书内）。留空 = 使用主题默认背景。</span>
             <div className={css.row}>
               <input className={css.input} style={{ flex: 1, minWidth: 220 }} placeholder="https://… 图片地址" value={(configDraft.themeBackground ?? '').startsWith('data:') ? '' : (configDraft.themeBackground ?? '')} onChange={e => applyBackground(e.target.value.trim() !== '' ? e.target.value.trim() : undefined)} />
               <button type="button" className={css.button + ' ' + css.buttonSmall} onClick={() => bgFileRef.current?.click()}><Upload size={13} style={{ verticalAlign: -2 }} /> 上传图片</button>

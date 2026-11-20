@@ -133,7 +133,7 @@ export function parseJinjiangRanking(html: string, source: MarketRadarListSource
 
 async function fetchHtml(url: string): Promise<string> {
   const response = await fetch(url, {
-    headers: { 'user-agent': 'Mozilla/5.0 (compatible; dsh-novel-forge-radar/1.0; public-ranking-metadata-only)' },
+    headers: { 'user-agent': 'Mozilla/5.0 (compatible; my-novel-forge-radar/1.0; public-ranking-metadata-only)' },
     signal: AbortSignal.timeout(20_000),
   })
   if (!response.ok) throw new Error(`榜单页面返回 HTTP ${response.status}`)

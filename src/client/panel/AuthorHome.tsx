@@ -3,7 +3,7 @@
  * 导航复用工作区 .panelNav 玻璃卡片样式（同款），导航项为作者级：书架/改编/资产库/全局资产库/AI 进度/设置。
  */
 import { useState, useRef, useEffect } from 'react'
-import { Library, Boxes, Brush, Radar, FileSearch, Lightbulb } from 'lucide-react'
+import { Library, Boxes, Brush, Radar, FileSearch, Lightbulb, Minus, X, ArrowLeft } from 'lucide-react'
 import type { NovelApi } from '../api.ts'
 import type { BookshelfSnapshot } from '../../protocol.ts'
 import { ShelfView } from './ShelfView.tsx'
@@ -23,7 +23,7 @@ import { useDialogFocus } from './ConfirmDialog.tsx'
 declare const __NOVEL_FORGE_VERSION__: string | undefined
 const PLUGIN_VERSION: string = typeof __NOVEL_FORGE_VERSION__ !== 'undefined' ? __NOVEL_FORGE_VERSION__ : '0.0.0'
 /** GitHub 仓库地址（关于区块点击跳转）。 */
-const REPO_URL = 'https://github.com/watersxya/dsh-novel-forge'
+const REPO_URL = 'https://github.com/dzbbb80839139-prog/my-novel-forge'
 
 /**
  * npm 上的版本是否**比本机这个构建更新**。
@@ -82,7 +82,7 @@ const NAV_TABS: Array<{
 ];
 
 
-export function AuthorHome({ api, shelf, onOpenBook, onReadBook, onAddBook, onImportBook, onBackground, progress, busy, busyLabel, liveBar, onClearProgress, onUseIdea, themeMode, themeDensity, onToggleMode, onChangeThemeMode, onChangeThemeDensity }: {
+export function AuthorHome({ api, shelf, onOpenBook, onReadBook, onAddBook, onImportBook, onBackground, progress, busy, busyLabel, liveBar, onClearProgress, onUseIdea, themeMode, themeDensity, onToggleMode, onChangeThemeMode, onChangeThemeDensity, onMinimize, onClose }: {
   /** 当前显示模式（顶栏「墨纸 / 纸白」切换用）。 */
   themeMode?: 'system' | 'light' | 'dark';
   /** 当前界面密度。 */
@@ -93,6 +93,9 @@ export function AuthorHome({ api, shelf, onOpenBook, onReadBook, onAddBook, onIm
   onChangeThemeMode: (m: 'system' | 'light' | 'dark') => void;
   /** 改变全局界面密度（联动整个面板）。 */
   onChangeThemeDensity: (d: 'comfort' | 'compact' | 'spacious') => void;
+  /** 顶栏窗口控制：最小化（收起为悬浮球）/ 关闭面板。 */
+  onMinimize?: () => void;
+  onClose?: () => void;
   api: NovelApi; shelf: BookshelfSnapshot;
   onOpenBook: (id: string) => void; onReadBook: (id: string) => void; onAddBook: () => void; onImportBook: () => void;
   /** 创意灵感 → 采纳某个灵感带入开书向导。 */
@@ -117,14 +120,14 @@ export function AuthorHome({ api, shelf, onOpenBook, onReadBook, onAddBook, onIm
   const [progressOpen, setProgressOpen] = useState(false);
   const [progressPos, setProgressPos] = useState(() => {
     try {
-      const raw = window.localStorage.getItem('dsh-novel-forge.home.progress.float')
+      const raw = window.localStorage.getItem('my-novel-forge.home.progress.float')
       if (raw !== null) { const p = JSON.parse(raw) as { x?: unknown; y?: unknown }; return { x: typeof p.x === 'number' ? p.x : 60, y: typeof p.y === 'number' ? p.y : 120 } }
     } catch { /* ignore */ }
     return { x: 60, y: 120 }
   });
   const [progressSize, setProgressSize] = useState(() => {
     try {
-      const raw = window.localStorage.getItem('dsh-novel-forge.home.progress.size')
+      const raw = window.localStorage.getItem('my-novel-forge.home.progress.size')
       if (raw !== null) { const p = JSON.parse(raw) as { w?: unknown; h?: unknown }; return { w: typeof p.w === 'number' ? p.w : 460, h: typeof p.h === 'number' ? p.h : 420 } }
     } catch { /* ignore */ }
     return { w: 460, h: 420 }
@@ -133,8 +136,8 @@ export function AuthorHome({ api, shelf, onOpenBook, onReadBook, onAddBook, onIm
 
   useEffect(() => {
     try {
-      window.localStorage.setItem('dsh-novel-forge.home.progress.float', JSON.stringify(progressPos))
-      window.localStorage.setItem('dsh-novel-forge.home.progress.size', JSON.stringify(progressSize))
+      window.localStorage.setItem('my-novel-forge.home.progress.float', JSON.stringify(progressPos))
+      window.localStorage.setItem('my-novel-forge.home.progress.size', JSON.stringify(progressSize))
     } catch { /* ignore */ }
   }, [progressPos, progressSize]);
 
@@ -160,7 +163,7 @@ export function AuthorHome({ api, shelf, onOpenBook, onReadBook, onAddBook, onIm
     let cancelled = false
     void (async () => {
       try {
-        const r = await fetch('https://registry.npmjs.org/@waterwx%2Fdsh-novel-forge/latest')
+        const r = await fetch('https://registry.npmjs.org/@local%2Fmy-novel-forge/latest')
         if (!r.ok) return
         const data = (await r.json()) as { version?: unknown }
         if (!cancelled && typeof data.version === 'string') setNpmLatest(data.version)
@@ -210,7 +213,7 @@ export function AuthorHome({ api, shelf, onOpenBook, onReadBook, onAddBook, onIm
         <div className={css.navTitle}>
           <div className={css.navTitleLogo} aria-hidden="true">书</div>
           <div style={{ minWidth: 0 }}>
-            <div className={css.navTitleName}>小说工坊<span className={css.brandEn}> · AI Novel Workbench</span></div>
+            <div className={css.navTitleName}>我的小说工坊<span className={css.brandEn}> · AI Novel Workbench</span></div>
             <div className={css.navTitleBook}>作者工作台 <span aria-hidden="true">·</span> 跨书创作</div>
           </div>
         </div>
@@ -247,6 +250,9 @@ export function AuthorHome({ api, shelf, onOpenBook, onReadBook, onAddBook, onIm
             </button>
           )}
         </div>
+        {/* 窗口控制：最小化 / 关闭（与工作台页头一致） */}
+        <button type="button" className={css.headChip} title="最小化" aria-label="最小化" onClick={() => { onMinimize?.() }}><Minus size={14} /></button>
+        <button type="button" className={css.headChip} title="关闭" aria-label="关闭" onClick={() => { onClose?.() }}><X size={13} /></button>
       </nav>{/* 第二行：当前组的子页按钮（仅在该组有多个子页时出现，对齐 demo 的 .group-nav） */}
       {(() => {
         const activeTab = NAV_TABS.find(t => t.children.some(c => c.id === nav))
@@ -270,6 +276,26 @@ export function AuthorHome({ api, shelf, onOpenBook, onReadBook, onAddBook, onIm
         )
       })()}
       <div className={css.authorContent}>
+        {nav !== 'shelf' && (
+          <div className={css.subPageBackBar}>
+            <button
+              type="button"
+              className={css.subPageBackBtn}
+              title="返回上一级"
+              aria-label="返回上一级"
+              onClick={() => {
+                const parent: Partial<Record<AuthorNav, AuthorNav>> = {
+                  adapt: 'shelf',
+                  marketRadar: 'shelf', ideaInspiration: 'marketRadar', bookAnalysis: 'marketRadar',
+                  assets: 'shelf', library: 'assets',
+                }
+                setNav(parent[nav] ?? 'shelf')
+              }}
+            >
+              <ArrowLeft size={15} /> 返回上一级
+            </button>
+          </div>
+        )}
         {nav === 'shelf' && <ShelfView api={api} shelf={shelf} toolbarExtra={shelfNavExtra} onOpenBook={onOpenBook} onReadBook={onReadBook} onAddBook={onAddBook} onImportBook={onImportBook} onOpenAdapt={() => { setNav('adapt') }} />}
         {nav === 'adapt' && <AdaptModeView api={api} onOpenBook={onOpenBook} />}
         {nav === 'assets' && <AuthorAssetsView api={api} />}
