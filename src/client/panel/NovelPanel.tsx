@@ -2391,7 +2391,7 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
     }
   }
 
-  const handleExport = async (format: 'txt' | 'md' | 'json', scope: ExportScope = 'book'): Promise<void> => {
+  const handleExport = async (format: 'txt' | 'md' | 'json' | 'docx', scope: ExportScope = 'book'): Promise<void> => {
     setBusy(true)
     setError('')
     try {
@@ -3935,6 +3935,7 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
                       <>
                         <button type="button" className={css.button} disabled={busy || chapters.length === 0} onClick={() => { void handleExport('txt', 'book') }}>{tt('settings.exportTxt')}</button>
                         <button type="button" className={css.button} disabled={busy || chapters.length === 0} onClick={() => { void handleExport('md', 'book') }}>{tt('settings.exportMd')}</button>
+                        <button type="button" className={`${css.button} ${css.buttonPrimary}`} disabled={busy || chapters.length === 0} onClick={() => { void handleExport('docx', 'book') }} title="导出 Word 文档：书名作标题、每章另起一页、中文宋体首行缩进，可直接交稿">导出 Word (.docx)</button>
                       </>
                     ) : (
                       <>

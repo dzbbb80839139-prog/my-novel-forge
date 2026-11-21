@@ -7,9 +7,12 @@
  */
 import { describe, it, expect } from 'vitest'
 import {
+  ANTI_AI_STRUCTURE_GUIDE,
   BUILTIN_ANTI_AI_RULES,
   BUILTIN_STARTER_STYLE_PROFILES,
   BUILTIN_STYLE_TEMPLATES,
+  emptyProjectAssets,
+  renderAntiAiRules,
   starterProfileToAsset,
   styleTemplateToAsset,
 } from '../src/assets.ts'
@@ -60,10 +63,10 @@ describe('内置叙事风格模板', () => {
 
 describe('内置反 AI 规则', () => {
   it('数量与 key 集合稳定，key 唯一', () => {
-    expect(BUILTIN_ANTI_AI_RULES).toHaveLength(18)
+    expect(BUILTIN_ANTI_AI_RULES).toHaveLength(30)
     const keys = BUILTIN_ANTI_AI_RULES.map(r => r.key)
     expect(new Set(keys).size).toBe(keys.length)
-    for (const key of ['forbid-explicit-psychology', 'forbid-ending-elevation', 'encourage-reality-gap']) {
+    for (const key of ['forbid-explicit-psychology', 'forbid-ending-elevation', 'encourage-reality-gap', 'forbid-report-tone', 'forbid-plan-jargon-in-prose', 'forbid-prose-rhetoric', 'forbid-prose-rhythm', 'forbid-prose-dialogue', 'forbid-prose-punctuation', 'forbid-chat-residue', 'forbid-rebuttal-stance', 'forbid-pitch-stance', 'forbid-fake-layering', 'forbid-absolute-contrast', 'forbid-portable-filler']) {
       expect(keys).toContain(key)
     }
   })
@@ -115,5 +118,28 @@ describe('起步写法档', () => {
       expect(asset, p.key).not.toBeNull()
       expect(asset?.name).toBe(p.name)
     }
+  })
+})
+
+describe('结构层去 AI 味指南（内置）', () => {
+  it('内容覆盖五组病灶与词汇层清单', () => {
+    for (const marker of ['甲·对称腔调', '乙·重复与视角', '丙·信息与场景', '丁·情绪与表达', '戊·长线与态度', '词汇层同扫']) {
+      expect(ANTI_AI_STRUCTURE_GUIDE, marker).toContain(marker)
+    }
+    // 核心判断必须在：AI 味在骨架而非词汇
+    expect(ANTI_AI_STRUCTURE_GUIDE).toContain('AI 味在句子骨架，不在词汇')
+  })
+
+  it('随反 AI 规则块自动注入（不需作者填槽位）', () => {
+    const text = renderAntiAiRules(emptyProjectAssets())
+    expect(text).toContain('结构层（比删词更关键')
+    expect(text).toContain(ANTI_AI_STRUCTURE_GUIDE)
+  })
+
+  it('即使所有规则被禁用，结构指南仍不缺席', () => {
+    // 指南是独立追加的固定块，不受三档规则裁剪与 enabled 过滤影响。
+    const assets = { ...emptyProjectAssets(), antiAiRules: [] }
+    const text = renderAntiAiRules(assets)
+    expect(text).toContain('甲·对称腔调')
   })
 })

@@ -725,6 +725,156 @@ export const BUILTIN_ANTI_AI_RULES: AntiAiRule[] = [
     riskLevel: 'low',
     autoRewrite: false,
     globalBaselineEnabled: false,
+  },
+  {
+    name: '禁止汇报腔/公文腔写正文',
+    avoid: '正文不是汇报材料。禁止公文式词语与句式：首先/其次/一是/二是；任务/目标/方案/措施/推进/落实/确保；通过……实现……；这说明/意味着/体现了；数据显示/经检测；他意识到/他明白/他决定；本章/这一卷/读者。第一句必须是动作、声音、具体物或对白，不许用概述或背景交代开头；一段只做一件事；情绪用身体反应写，不用抽象形容词；结尾停在动作、画面或一句话，不补评价。',
+    fix: '把公文词换成具体场景：开头给动作/声音/物件/对白；一段一事；情绪落到身体与感官；结尾停在动作或画面，删掉总结评价。',
+    // detectPatterns 只收强特征词；「通过/实现/目标/功能/他意识到」等在正文里合法出现率高，
+    // 放入扫描表会大量误报——它们的约束靠 avoid/promptInstruction 注入生成端实现。
+    detectPatterns: ['首先', '其次', '一是', '二是', '任务', '方案', '措施', '推进', '落实', '确保', '这说明', '意味着', '体现了', '数据显示', '经检测', '本章', '这一卷', '读者'],
+    builtin: true,
+    key: 'forbid-report-tone',
+    severity: 'forbidden',
+    riskLevel: 'high',
+    autoRewrite: true,
+    globalBaselineEnabled: true,
+  },
+  {
+    name: '生产单术语不许直接写进正文',
+    avoid: '把生产单里的「核心事件/功能/钩子/压力源」等规划术语直接写进小说正文。',
+    fix: '先翻译成场景卡再落笔：谁在哪、正在做什么、什么打断、怎么反应、停在哪。',
+    detectPatterns: ['核心事件', '压力源', '钩子设置', '功能定位'],
+    builtin: true,
+    key: 'forbid-plan-jargon-in-prose',
+    severity: 'forbidden',
+    riskLevel: 'high',
+    autoRewrite: false,
+    globalBaselineEnabled: true,
+  },
+  // 文面规范 4 条：全部为写作时的表达约束，靠 avoid 注入生成/审稿提示词。
+  // 不设 detectPatterns——破折号/排比/段落长度等属形式特征，ai-scan 已有度量，
+  // 关键词表既扫不准也会误报。注意渲染时 avoid 被 clip 到 90 字，故每条须短于此。
+  {
+    name: '文面·修辞克制',
+    avoid: '比喻只留最贴切的一个，其余全删；删掉过于精确抽象、想象不出具体画面的描写；不用大段文字罗列清单（系统面板、任务列表除外）。',
+    fix: '只保留最能让人看见画面的那一个比喻，其余删掉；抽象句改成可感知的具体描写。',
+    detectPatterns: [],
+    builtin: true,
+    key: 'forbid-prose-rhetoric',
+    severity: 'forbidden',
+    riskLevel: 'medium',
+    autoRewrite: false,
+    globalBaselineEnabled: true,
+  },
+  {
+    name: '文面·句式与段落节奏',
+    avoid: '不重复由相同关联词构成的固定句式；不反复用结构相同或一行一句的排比短句；不写几百字长段，也不三五字就分段；完整一句放同段，不中途回车。',
+    fix: '打散重复句式与排比，合并碎段、拆开长段，把完整句子放回同一段。',
+    detectPatterns: [],
+    builtin: true,
+    key: 'forbid-prose-rhythm',
+    severity: 'forbidden',
+    riskLevel: 'medium',
+    autoRewrite: false,
+    globalBaselineEnabled: true,
+  },
+  {
+    name: '文面·对话现场',
+    avoid: '短对话之间穿插动作、神态或场景；人物对话用引号，与旁白区分清楚。',
+    fix: '在对白之间插入动作、神态、环境细节；对话一律加引号，与旁白分开。',
+    detectPatterns: [],
+    builtin: true,
+    key: 'forbid-prose-dialogue',
+    severity: 'forbidden',
+    riskLevel: 'medium',
+    autoRewrite: false,
+    globalBaselineEnabled: true,
+  },
+  {
+    name: '文面·标点规范',
+    avoid: '用中文全角标点，不留空格、不用特殊符号；破折号只在补充说明或语气转变时用；省略号、分割线只用于场景转换和时间跳转，不滥用。',
+    fix: '统一全角标点、去掉空格与特殊符号；删掉滥用或装饰性的破折号、省略号、分割线。',
+    detectPatterns: [],
+    builtin: true,
+    key: 'forbid-prose-punctuation',
+    severity: 'forbidden',
+    riskLevel: 'medium',
+    autoRewrite: false,
+    globalBaselineEnabled: true,
+  },
+  // 语用姿态 6 条：来自中文去 AI 味方法论的「姿态类」痕迹，补充工坊此前未覆盖的空缺。
+  {
+    name: '禁聊天残留',
+    avoid: '删掉助手口吻的聊天残留（希望这能帮到你 / 让我们来看看 / 值得一提的是 / 不难发现），正文里不出现对读者说话的痕迹。',
+    fix: '整句删除，或改成叙事内的动作、观察、人物反应。',
+    detectPatterns: ['希望这能帮到你', '让我们来看看', '值得一提的是', '不难发现'],
+    builtin: true,
+    key: 'forbid-chat-residue',
+    severity: 'forbidden',
+    riskLevel: 'high',
+    autoRewrite: true,
+    globalBaselineEnabled: true,
+  },
+  {
+    name: '禁反驳姿态',
+    avoid: '不写「问题不在A而在B」「有人会说…但」「我不是这个意思」这类预设质疑的句式；读者没质疑过的事，不预先反驳。',
+    fix: '直接陈述判断；确有分歧就写明具体是谁的什么观点，不虚构对立面。',
+    detectPatterns: [],
+    builtin: true,
+    key: 'forbid-rebuttal-stance',
+    severity: 'forbidden',
+    riskLevel: 'medium',
+    autoRewrite: false,
+    globalBaselineEnabled: true,
+  },
+  {
+    name: '禁推销代言姿态',
+    avoid: '不替读者下结论（你会发现 / 一眼就能），不替对象排卖点（除了…还… / 不只…还…），不替读者抒情（终于… / 再也…）。',
+    fix: '把判断交回事实：写发生了什么、谁做了什么，让读者自己得出结论。',
+    detectPatterns: [],
+    builtin: true,
+    key: 'forbid-pitch-stance',
+    severity: 'forbidden',
+    riskLevel: 'medium',
+    autoRewrite: false,
+    globalBaselineEnabled: true,
+  },
+  {
+    name: '禁分层编号冒充深度',
+    avoid: '不用「第一层/第二层」「第一个微妙之处」等楼层数冒充分析深度；层次靠因果与段落推进，不靠报数。',
+    fix: '删掉层号，把同一判断换说法的地方合并，用因果链把内容往前推。',
+    detectPatterns: ['第一层', '第二层', '第三层', '第一个微妙之处'],
+    builtin: true,
+    key: 'forbid-fake-layering',
+    severity: 'forbidden',
+    riskLevel: 'medium',
+    autoRewrite: false,
+    globalBaselineEnabled: true,
+  },
+  {
+    name: '禁绝对化对比',
+    avoid: '少用「根本不是X」「压根不是一回事」「天壤之别」；绝对词的分量来自先把对方说死，不来自事实。',
+    fix: '删掉绝对化断言，改为具体差异或具体代价。',
+    detectPatterns: ['根本不是', '压根不是', '天壤之别'],
+    builtin: true,
+    key: 'forbid-absolute-contrast',
+    severity: 'forbidden',
+    riskLevel: 'medium',
+    autoRewrite: false,
+    globalBaselineEnabled: true,
+  },
+  {
+    name: '可移植性测试（废话判定）',
+    avoid: '一句话原封不动搬到另一个人、公司、题材上依然成立，它就是废话——删掉或换成只属于这个主题的事实、例子、机制、后果。',
+    fix: '用只有本书才成立的细节替换通用句：具体人名、地点、代价、数字、前因。',
+    detectPatterns: [],
+    builtin: true,
+    key: 'forbid-portable-filler',
+    severity: 'forbidden',
+    riskLevel: 'medium',
+    autoRewrite: false,
+    globalBaselineEnabled: true,
   },]
 
 /** 内置题材基底库（常用网文题材树，跨书复用）。 */
@@ -1598,6 +1748,22 @@ export function ensureBuiltinAssets(assets: ProjectAssets | undefined, mode: 'mi
   return { ...base, antiAiRules: out }
 }
 
+/**
+ * 结构层去 AI 味指南（内置，随生成/审稿/润色自动注入）。
+ *
+ * 来源：WorkBuddy 技能 webnovel-deai 的二十类结构病灶，转写为**生成时**的禁止项。
+ * 判断依据：AI 味主要在句子骨架而非词汇——只删「仿佛/宛如」这类词，骨架仍是机器腔。
+ * 不走 {@link AntiAiRule}：那条路每条 avoid 会被 clip 到 90 字，装不下分组条目。
+ */
+export const ANTI_AI_STRUCTURE_GUIDE = `AI 味在句子骨架，不在词汇。以下结构病灶逐条禁犯：
+甲·对称腔调：禁「不是X，而是Y」，直接写Y；禁顿悟金句「那一刻他终于明白」，用动作收；禁「是A，是B，是C」三段式；禁工整对仗，用长短不齐的口语。
+乙·重复与视角：同一意思不换说法重复（他没说话/他没作声/他没接话）；不跳出来解说「他心里早存了比较」，让事实自己说；不能只有动作没有内心，人不是提线木偶；对白不连续「他说」同构，去标签、用动作带出说话人。
+丙·信息与场景：同一道具或手法别反复破局，第二次换招；别用「老人」这类泛称指多个不同的人，给名字；不碎段化，一句一段像报告；不用大纲陈述顶替场景（「次日，他递上帖子」要写出具体动作与时间感）。
+丁·情绪与表达：不绕弯文艺腔（「他的手，是干净的」），说人话；情绪别压平，该有反应就给身体和表情；该说白就说白，光「张了张嘴又闭上」读者不知他想说什么；不以物代人（「指节白了一圈」要落到脸色）。
+戊·长线与态度：不生造词，全篇没出现过的词别突然用；学风格不是抄句子，别把前文换同义词搬来；不结果先行（「就这半步救了他的命」要先写动作再写结果）。
+词汇层同扫：仿佛/宛如/好似、不禁/油然而生、进行/实施/开展、这意味着/不难看出、破折号滥用。
+篇幅不够时用具体对话或动作补，禁止用环境描写、形容词灌水。`
+
 /** 把生效规则渲染成提示词块（禁止/风险/鼓励三档分列，压缩省 token）。 */
 export function renderAntiAiRules(assets: ProjectAssets | undefined): string {
   const rules = effectiveAntiAiRules(assets).filter(r => r.enabled !== false)
@@ -1634,6 +1800,10 @@ export function renderAntiAiRules(assets: ProjectAssets | undefined): string {
       lines.push(`- ${r.name}：${clip(r.fix !== '' ? r.fix : r.avoid, 90)}`)
     }
   }
+  // 结构层指南：比词汇层更致命，不参与上面的三档裁剪，整块附在末尾。
+  lines.push('')
+  lines.push('---- 结构层（比删词更关键：骨架不改，删光套话仍是机器腔）----')
+  lines.push(ANTI_AI_STRUCTURE_GUIDE)
   return lines.join('\n')
 }
 

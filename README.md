@@ -1,10 +1,9 @@
-# dsh-novel-forge — AI 编译小说工作台 / AI Novel Writing Workbench
+# my-novel-forge — AI 编译小说工作台 / AI Novel Writing Workbench
 
 <p align="center">
   <img alt="version" src="https://img.shields.io/badge/version-2.5.1-blue" />
-  <img alt="DSH peer" src="https://img.shields.io/badge/DSH%20peer-0.1.2--alpha.3-blue" />
+  <img alt="DSH peer" src="https://img.shields.io/badge/DSH%20peer-0.2.0--rc.2-blue" />
   <img alt="License" src="https://img.shields.io/badge/license-AGPL_3.0_only-blue" />
-  <a href="https://github.com/watersxya/dsh-novel-forge/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/watersxya/dsh-novel-forge/actions/workflows/ci.yml/badge.svg?branch=main" /></a>
 </p>
 
 <p align="center">
@@ -22,8 +21,7 @@
 
 **版本：`2.5.1`** · 定位：**纯文本小说创作**。所有环节（开书、设定、规划、写作、审校、质检、导出）都在侧边栏「小说工坊」面板内完成；不涉及图片 / 视频 / 分镜生成。
 
-> **安装标签**：2.0.0 起本项目已转正式版，`latest` 是默认标签，`npm i @waterwx/dsh-novel-forge` 即可。
-> 只有在测试预发布版本时才需要显式带 `@alpha`。
+> **安装方式**：本插件是本地派生版，包名 `@local/my-novel-forge`，**未发布到 npm**。用 `file:` 协议指向本地目录安装，见下方「安装」一节。
 >
 > **界面语言**：面板为**简体中文单语**（无语言切换）。本文档的中英对照是文档翻译，不代表界面提供英文。
 
@@ -189,51 +187,87 @@ pnpm install        # 安装依赖 / install dependencies
 pnpm build          # 重新构建 lib/ / rebuild lib/
 ```
 
-挂载到 dsh web profile / Mount into the dsh web profile:
+挂载到 DSH profile / Mount into the DSH profile（profile 名按你实际使用的填，桌面版通常是 `desktop`）:
 
 ```sh
-dsh plugin --profile web add link:"<此目录绝对路径>"
+dsh plugin --profile desktop add "file:<此目录绝对路径>"
 ```
 
-或 / or in `~/.dsh/profiles/web/cordis.patch.yml`:
+或在 `~/.dsh/profiles/<profile>/cordis.patch.yml` 里：
 
 ```yaml
 - insert:
-    - id: novel-forge
-      name: '@waterwx/dsh-novel-forge'
+    - id: my-novel-forge
+      name: '@local/my-novel-forge'
 ```
 
-重启 dsh web 后，侧边栏出现「小说工坊」。
+重启 DSH 后，侧边栏出现「小说工坊」。
 
-### 从 npm 安装（推荐）
+### 安装方式说明
 
-```sh
-dsh plugin --profile web add @waterwx/dsh-novel-forge
-```
+本插件是**本地派生版**，包名为 `@local/my-novel-forge`，**未发布到 npm**。因此：
 
-> 版本标签：`latest` 是默认标签（2.0.0 起本项目为正式版），`npm i @waterwx/dsh-novel-forge` 即可拿到最新版。
-> 预发布版本走 `@alpha`（见 `scripts/release.mjs` 发版时的 dist-tag 同步）。
+- 用 `file:` 协议指向本地目录安装（上面的命令），不要用版本号或 `link:`；
+- pnpm 会把目录链接进 profile 的 `node_modules/@local/`，改代码后 `pnpm build` 再重启 DSH 即生效；
+- 不存在「一键更新」——本插件已移除自更新功能（上游按 npm 版本自更新的逻辑对本地安装无效，且存在同名包被抢注的供应链风险）。
 
-npm 分发的是预构建产物，无需任何构建授权。
-从 GitHub 安装需为 git 依赖的 `prepare` 构建授权（`pnpm-workspace.yaml` 的 `allowBuilds`）。
+**环境要求**：Node `^22.19.0 || >=24.0.0`；DSH peer 依赖 `^0.2.0-rc.2`。
 
 **环境要求**：Node `^22.19.0 || >=24.0.0`；DSH peer 依赖 `^0.2.0-rc.2`。
 
 ---
 
+## 换模型 / Switching Models
+
+工坊所有 AI 操作都经 DSH 的 LLM 服务发出，`provider` 可填 DSH 支持的任意路由，不限于某一厂商。
+
+### 可以分开指定
+
+| 配置项 | 用途 |
+|---|---|
+| `model` | 主模型（其余项为空时，所有调用都走它） |
+| `generateModel` | 写正文专用 |
+| `reviewModel` | 审稿专用 |
+| `auditModel` | 质检专用 |
+| `fallbackModel` | 主模型失败时的兜底 |
+| `fallbackMaxTokens` | 备用模型的输出额度（不填则沿用原值） |
+| `reasoningEffort` | `off` / `low` / `high` / `max` |
+
+正文与审稿用不同模型是合理的：正文吃文笔，审稿吃逻辑。但**审稿模型不要用过弱的**——它要输出严格 JSON，坏一次格式就得重跑一次，反而更费额度。
+
+### 工坊已做的适配（无需手动处理）
+
+- **参数收敛**：按**模型身份**而非 provider 判断，避免经自定义中转时绕过厂商约束。已按厂商文档适配 Kimi K3（温度固定 1.0、支持 `reasoning_effort`）、K2.7-code（温度固定 1.0、不支持 `reasoning_effort`）、K2.6（thinking 1.0 / 非 thinking 0.6）。其他模型走 OpenAI 兼容的默认区间。
+- **输出额度按规模推算**：结构化任务（分卷、拆章、逐章规划）的额度随条目数增长，避免短任务浪费、长任务截断。
+- **换备用模型时重算额度**：否则主模型 20000 token 的请求打到小窗口备用模型上，必然撞 `max-tokens` 截断——判定失败、换模型也没用，白烧一轮。
+- **思考通道回落**：部分模型会把答案整个放进 reasoning 通道（正文块为空），工坊会自动从 reasoning 块取文本。
+
+### 换之前确认四件事
+
+1. **上下文窗口**：能否同时容纳「设定 + 前文 + 本章要求」。窗口偏小时工坊会压缩预算，丢的是设定细节，直接影响一致性。
+2. **单章输出上限**：一章 2500–4000 字，额度不够会写到一半被截断。
+3. **JSON 稳定性**：审稿 / 规划 / 分章都要求严格结构化输出。**工坊不做 JSON repair 去补被截断的结构**——repair 只能修已有结构，补不出尚未输出的条目；在服务层手工补齐，等于把不完整的规划伪装成可用资产。宁可报错重试。
+4. **中文文笔**：纯模型能力，与上述适配无关。
+
+### 换完怎么验
+
+生成一章 → 检查是否被截断（末尾是否完整收束）→ 跑一次审稿 → 看结构化结果是否正常解析。三项都过再批量写。
+
+---
+
 ## 数据位置 / Data Locations
 
-- 书架 / Bookshelf：`~/.dsh/dsh-novel-forge-bookshelf.json`
-- 作者资产库 / Author assets：`~/.dsh/dsh-novel-forge-author-assets.json`
-- 全局写作资产 / Global assets：`~/.dsh/novel-forge-global-assets.json`
-- 每本书一个输出目录（默认 `~/.dsh/novels/<书名>`，可在设置页修改并一键迁移）：
+- 书架 / Bookshelf：`~/.dsh/my-novel-forge-bookshelf.json`
+- 作者资产库 / Author assets：`~/.dsh/my-novel-forge-author-assets.json`
+- 全局写作资产 / Global assets：`~/.dsh/my-novel-forge-global-assets.json`
+- 每本书一个输出目录（默认 `~/.dsh/my-novels/<书名>`，可在设置页修改并一键迁移）：
   - `novel-project.json` — 项目状态（道藏 / 卷·章节计划 / 编年录 / 时间线 / 张力 / 剧情线 / 待办 …）
   - `第N章 <标题>.md` — 章节正文（Markdown）与 `.bak.md` 备份
   - `snapshots/` — 章节历史版本（含 `index.json` 索引，每章默认保留 20 份）
   - `run-state.json` — 生产单断点状态
   - `novel-assistant.jsonl` — AI 编辑 Agent 对话记录
-- 设置：`~/.dsh/settings.yaml` 的 `dsh-novel-forge` 段
-- 界面偏好：浏览器 localStorage —— 显示模式 / 界面密度 / 编辑器字号 / 面板宽度 / 阅读器底色，以及右上角状态芯片的显示模式与拖拽位置（键名前缀 `dsh-novel-forge.`，如 `dsh-novel-forge.runChip.mode`、`dsh-novel-forge.runChip.pos`）
+- 设置：`~/.dsh/settings.yaml` 的 `my-novel-forge` 段
+- 界面偏好：浏览器 localStorage —— 显示模式 / 界面密度 / 编辑器字号 / 面板宽度 / 阅读器底色，以及右上角状态芯片的显示模式与拖拽位置（键名前缀 `my-novel-forge.`，如 `my-novel-forge.runChip.mode`、`my-novel-forge.runChip.pos`）
 
 ---
 
@@ -268,7 +302,7 @@ node scripts/check-third-party.mjs     # 来源卫生：不得出现外部项目
   1. **已登录 npm**。`npm whoami` 要能输出用户名。网页登录 npmjs.com **不算**——那只给你看网页的权限，命令行认的是 `~/.npmrc`。用 token 登录：`npm config set //registry.npmjs.org/:_authToken npm_xxx`（token 在 <https://www.npmjs.com/settings/your-profile> → Access Tokens 生成，勾 `Publish`）。npm 早已禁用密码登录。
   2. **CHANGELOG.md 顶部要有目标版本条目**，格式 `## [x.y.z] - YYYY-MM-DD`。脚本只认顶部第一条——忘了加会重复发布当前版本，而 npm 版本号不可复用。
   3. **GitHub 也要能认证**：最后创建 Release 需要 token。优先读环境变量 `GH_TOKEN`（或 `GITHUB_TOKEN`）；没有则回退 `git credential fill`（需本机装了凭据管理器）。CI 与容器里通常要用前者。
-- **注意 `--access public` 不是可选项**：本包是 scoped 包（`@waterwx/…`），npm 规定 scoped 包默认私有，不带该参数会被拒（`402 Payment Required`）。
+- **注意 `--access public` 只在 scoped 包名下必需**：npm 规定 scoped 包（`@scope/name`）默认私有，不带该参数会被拒（`402 Payment Required`）；无 scope 的包名（如 `my-novel-forge`）默认就是公开的，无需该参数。
 - **规则工程约束**：阶段契约、失败分级、截断显式化、修订仲裁等规则由宿主统一实现，面板与助手共用同一结论，不各写一套。
 
 ---
@@ -278,7 +312,7 @@ node scripts/check-third-party.mjs     # 来源卫生：不得出现外部项目
 ```
 src/                  插件源码（宿主半）
   engine.ts           写作 / 审稿 / 润色 / 提炼 / 导出等全部 LLM 管线（提示词已迁出，见 prompts/）
-  routes.ts           Web 路由（/api/dsh-novel-forge/*）
+  routes.ts           Web 路由（/api/my-novel-forge/*）
   run.ts              生产单（批量章节生产的标准执行器）
   revision.ts         修订仲裁：三类建议合并成一份指令 + 多源验证基准
   timeline.ts         故事时间线（归一化 / 注入渲染 / 规则初筛）
@@ -360,21 +394,31 @@ An AI novel-writing plugin for DeepSeek Harness (DSH). Feed it an outline (docx 
 
 ### Install
 
+This is a **local fork**, published to npm as nothing — the package name is
+`@local/my-novel-forge` and it is **not on npm**. Install it by path:
+
 ```sh
-dsh plugin --profile web add @waterwx/dsh-novel-forge
+pnpm install && pnpm build
+dsh plugin --profile desktop add "file:<absolute path to this directory>"
 ```
-`latest` is the default tag (2.0.0 turned this line into stable releases), so the bare
-package name gets you the newest version. Pin `@alpha` only when you deliberately want a prerelease.
-Or link a local checkout and restart dsh web; the "Novel Forge" entry appears in the sidebar.
+
+(Use whatever profile you actually run; desktop builds usually use `desktop`.)
+Restart DSH and the "Novel Forge" entry appears in the sidebar. Because pnpm links the
+directory into the profile's `node_modules/@local/`, rebuilding and restarting is enough
+to pick up code changes.
+
+There is no one-click updater: the upstream npm-version updater is meaningless for a
+local `file:` install, and it carried a supply-chain risk if the package name were ever
+squatted.
 
 Requirements: Node `^22.19.0 || >=24.0.0`; DSH peer `^0.2.0-rc.2`.
 
 ### Data
 
-- Bookshelf: `~/.dsh/dsh-novel-forge-bookshelf.json`
-- Author assets / global assets: `~/.dsh/dsh-novel-forge-author-assets.json`, `~/.dsh/novel-forge-global-assets.json`
+- Bookshelf: `~/.dsh/my-novel-forge-bookshelf.json`
+- Author assets / global assets: `~/.dsh/my-novel-forge-author-assets.json`, `~/.dsh/my-novel-forge-global-assets.json`
 - Per book: an output directory with `novel-project.json`, chapter Markdown, `.bak.md` backups, `snapshots/`, `run-state.json`, `novel-assistant.jsonl`
-- Settings: `dsh-novel-forge` section of `~/.dsh/settings.yaml`; UI preferences in localStorage
+- Settings: `my-novel-forge` section of `~/.dsh/settings.yaml`; UI preferences in localStorage
 
 ### Engineering & gates
 

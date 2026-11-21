@@ -14,6 +14,7 @@ const REVIEW_DIMENSION_IDS = new Set(['character', 'setting', 'redline', 'writin
 
 import { mkdirSync, readFileSync, writeFileSync, readdirSync, existsSync, rmSync, renameSync, statSync } from 'node:fs'
 import { stripChapterHeadings } from './strip-headings.ts'
+import { buildDocx, type DocxChapter } from './docx-write.ts'
 import { alignPlotlineProgress } from './plotline-align.ts'
 import { join, basename, extname } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -4254,6 +4255,34 @@ export function exportBook(outputDir: string, project: ProjectState, format: 'tx
   return { file, chars: content.length, chapters: written.length, ...(skipped.length > 0 ? { skipped } : {}) }
 }
 
+/**
+ * 全本导出为 .docx：书名作标题、每章从新页起、正文按行成段。
+ * 跳过文件缺失/为空的章，并在返回值里如实报告跳过的章号。
+ */
+function exportBookDocx(
+  outputDir: string,
+  project: ProjectState,
+): { file: string; chars: number; chapters: number; skipped?: number[] } {
+  const chapters: DocxChapter[] = []
+  const skipped: number[] = []
+  let chars = 0
+  for (const chapter of project.chapters) {
+    if (chapter.file === undefined || chapter.file === '') continue
+    const body = readChapterFile(outputDir, chapter)
+    if (body === undefined || body.trim() === '') {
+      skipped.push(chapter.no)
+      continue
+    }
+    chars += body.length
+    chapters.push({ no: chapter.no, title: chapter.title, body })
+  }
+  if (chapters.length === 0) throw new Error('没有可导出的章节正文（章节文件缺失或为空）')
+  const bytes = buildDocx(project.bookName, chapters)
+  const file = uniqueExportFile(outputDir, `《${safeFileName(project.bookName)}》全本`, 'docx')
+  writeFileSync(join(outputDir, file), bytes)
+  return { file, chars, chapters: chapters.length, ...(skipped.length > 0 ? { skipped } : {}) }
+}
+
 /** 逐行渲染「- 名称：值」清单，跳过空值。 */
 function renderPairs(pairs: Array<[string, string | undefined]>): string {
   return pairs
@@ -4437,8 +4466,14 @@ export function exportScope(
   outputDir: string,
   project: ProjectState,
   scope: ExportScope,
-  format: 'txt' | 'md' | 'json',
+  format: 'txt' | 'md' | 'json' | 'docx',
 ): { file: string; chars: number; chapters: number; skipped?: number[] } {
+  if (format === 'docx') {
+    // Word 导出走自己的生成器（见 docx-write.ts）。目前只支持整本正文：
+    // 设定/规划这类结构化内容用 Word 排版收益不大，先把交稿场景做扎实。
+    if (scope !== 'book') throw new Error('Word 导出目前只支持「整本正文」，请切换导出范围')
+    return exportBookDocx(outputDir, project)
+  }
   if (scope === 'book') return exportBook(outputDir, project, format === 'json' ? 'md' : format)
   if (scope === 'project') {
     const payload = { schema: 'my-novel-forge/project@1', exportedAt: new Date().toISOString(), project }

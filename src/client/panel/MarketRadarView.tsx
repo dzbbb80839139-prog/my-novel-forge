@@ -47,6 +47,9 @@ export default function MarketRadarView({ api, bookId }: { api: NovelApi; bookId
   const [ideas, setIdeas] = useState<IdeaInspirationResult['ideas'] | null>(null)
   const [ideaBusy, setIdeaBusy] = useState(false)
   const [applyBusy, setApplyBusy] = useState(false)
+  /** 粘贴榜单页网址 → 用工坊自带抓取器取正文填入 feedText。 */
+  const [feedUrl, setFeedUrl] = useState('')
+  const [fetchingUrl, setFetchingUrl] = useState(false)
   const [applied, setApplied] = useState('')
   const [syncBusy, setSyncBusy] = useState(false)
   const [syncedMsg, setSyncedMsg] = useState('')
@@ -75,6 +78,26 @@ export default function MarketRadarView({ api, bookId }: { api: NovelApi; bookId
     const set = new Set((scanGroups ?? []).map(g => g.platform))
     return PLATFORMS.filter(p => set.has(p))
   }, [scanGroups])
+
+  /** 抓取：用工坊自带的抓取器把榜单页正文读出来，填进「榜单文本兜底」。 */
+  const fetchFromUrl = async (): Promise<void> => {
+    const url = feedUrl.trim()
+    if (url === '') { setError('请填写榜单页网址'); return }
+    setFetchingUrl(true)
+    setError('')
+    try {
+      const r = await api.fetchUrl(url)
+      if (r.error !== undefined) { setError(r.error); return }
+      const text = (r.text ?? '').trim()
+      if (text === '') { setError('抓到的正文为空，可能该页需要登录或被反爬'); return }
+      setFeedText(text.slice(0, 20000))
+      if (r.truncated === true) setError('页面较长，只取前 20 万字符进了输入框')
+    } catch (err) {
+      setError(`抓取失败：${(err as Error).message}`)
+    } finally {
+      setFetchingUrl(false)
+    }
+  }
 
   const scan = async (): Promise<void> => {
     setScanning(true)
@@ -234,6 +257,22 @@ export default function MarketRadarView({ api, bookId }: { api: NovelApi; bookId
               {PLATFORM_LABELS[p]}
             </button>
           ))}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--nf-space-6)' }}>
+          <label className={css.fieldLabel}>从网址抓榜单（可选，贴榜单页链接自动抓正文；依赖 DSH 的 read-url 插件）</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input
+              className={css.input}
+              style={{ flex: '1 1 260px' }}
+              value={feedUrl}
+              onChange={e => setFeedUrl(e.target.value)}
+              placeholder="https://…（公开榜单页）"
+              spellCheck={false}
+            />
+            <button type="button" className={`${css.button} ${css.buttonSmall}`} disabled={fetchingUrl || feedUrl.trim() === ''} onClick={() => { void fetchFromUrl() }}>
+              {fetchingUrl ? '抓取中…' : '抓取正文'}
+            </button>
+          </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--nf-space-6)' }}>
           <label className={css.fieldLabel}>榜单文本兜底（可选，粘贴公开榜单文本；扫榜失败时可用于人工候选）</label>

@@ -138,7 +138,6 @@ export const NOVEL_API = {
   bookSettings: '/api/my-novel-forge/book-settings',
   openFolder: '/api/my-novel-forge/open-folder',
   /** 插件自更新：在 DSH profile 目录拉取最新 npm 版（下载后需重启 DSH 生效）。 */
-  pluginUpdate: '/api/my-novel-forge/plugin/update',
   /** 作者资产库/总数据：读取个人跨书资产（笔法/红线/套路/角色模板/世界观模板）。 */
   authorAssets: '/api/my-novel-forge/author-assets',
   /** 作者资产库：新增/更新一条资产（upsert by id）。 */
@@ -169,6 +168,8 @@ export const NOVEL_API = {
   distillText: '/api/my-novel-forge/distill-text',
   /** 文本洗稿：把段落改写去重、换种说法。 */
   rewriteText: '/api/my-novel-forge/rewrite-text',
+  /** 网页抓取（自研，不依赖宿主插件）：POST { url } → 正文文本。 */
+  fetchUrl: '/api/my-novel-forge/fetch-url',
 } as const
 
 /** 书架：一本书的条目。 */
@@ -1947,7 +1948,7 @@ export const EXPORT_SCOPE_LABELS: Record<ExportScope, string> = {
 }
 
 export interface ExportRequest {
-  format: 'txt' | 'md' | 'json'
+  format: 'txt' | 'md' | 'json' | 'docx'
   /** 缺省 `book`（兼容旧调用）。 */
   scope?: ExportScope
 }
@@ -1958,7 +1959,7 @@ export interface ExportResponse {
   /** 全本导出时因文件缺失/为空被跳过的章号；无跳过项时缺省。 */
   skipped?: number[]
   scope: ExportScope
-  format: 'txt' | 'md' | 'json'
+  format: 'txt' | 'md' | 'json' | 'docx'
 }
 
 /** POST /config request: patch any subset of the runtime config. */
@@ -2688,9 +2689,3 @@ export interface AdaptMaterializeSaveResponse {
   outputDir: string
 }
 
-/** POST /plugin/update 响应：插件自更新结果。 */
-export interface PluginUpdateResponse {
-  ok: boolean
-  /** 更新结果说明（成功/失败/环境提示）。 */
-  message: string
-}

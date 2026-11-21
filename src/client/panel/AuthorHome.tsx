@@ -26,26 +26,6 @@ const PLUGIN_VERSION: string = typeof __NOVEL_FORGE_VERSION__ !== 'undefined' ? 
 /** GitHub 仓库地址（关于区块点击跳转）。 */
 const REPO_URL = 'https://github.com/dzbbb80839139-prog/my-novel-forge'
 
-/**
- * npm 上的版本是否**比本机这个构建更新**。
- *
- * 为什么不能只写 `npmLatest !== PLUGIN_VERSION`：本地构建常跑在 npm 版本之前
- * （本机 2.1.6 / npm 仍是 2.1.5），只比"不等"会让顶栏挂出「更新到 v2.1.5」——
- * 一条**降级**提示。预发布后缀（-alpha.1）不参与比较。
- */
-function isNewerVersion(candidate: string, current: string): boolean {
-  const parse = (v: string): number[] =>
-    v.replace(/^v/, '').split('-')[0].split('.').map(n => Number.parseInt(n, 10) || 0)
-  const a = parse(candidate)
-  const b = parse(current)
-  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
-    const x = a[i] ?? 0
-    const y = b[i] ?? 0
-    if (x !== y) return x > y
-  }
-  return false
-}
-
 type AuthorNav = 'shelf' | 'adapt' | 'assets' | 'library' | 'marketRadar' | 'bookAnalysis' | 'ideaInspiration' | 'distill' | 'rewrite';
 type AuthorSubNav = AuthorNav;
 
@@ -119,7 +99,6 @@ export function AuthorHome({ api, shelf, onOpenBook, onReadBook, onAddBook, onIm
   /** 当前是否深色（墨纸）：显式 dark，或跟随系统且系统为深色。 */
   const darkNow = themeMode === 'dark'
     || (themeMode !== 'light' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  const [updating, setUpdating] = useState(false);
   const [progressOpen, setProgressOpen] = useState(false);
   const [progressPos, setProgressPos] = useState(() => {
     try {
@@ -159,33 +138,6 @@ export function AuthorHome({ api, shelf, onOpenBook, onReadBook, onAddBook, onIm
     window.addEventListener('mouseup', onUp)
     return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp) }
   }, []);
-
-  /** npm 最新版本（更新检测；null = 未检测/检测失败）。 */
-  const [npmLatest, setNpmLatest] = useState<string | null>(null)
-  useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      try {
-        const r = await fetch('https://registry.npmjs.org/@local%2Fmy-novel-forge/latest')
-        if (!r.ok) return
-        const data = (await r.json()) as { version?: unknown }
-        if (!cancelled && typeof data.version === 'string') setNpmLatest(data.version)
-      } catch { /* best-effort */ }
-    })()
-    return () => { cancelled = true }
-  }, [])
-
-  const doUpdate = async (): Promise<void> => {
-    setUpdating(true)
-    try {
-      const res = await api.pluginUpdate()
-      window.alert(res.message)
-    } catch (err) {
-      window.alert('更新失败：' + ((err as Error).message ?? String(err)))
-    } finally {
-      setUpdating(false)
-    }
-  };
 
   /** 下放到书架工具行右端的组入口（创作 / 灵感策划 / 资产）——设置仍留顶栏。 */
   const shelfNavExtra = (
@@ -247,11 +199,6 @@ export function AuthorHome({ api, shelf, onOpenBook, onReadBook, onAddBook, onIm
             <span>ℹ v{PLUGIN_VERSION}</span>
             <span className={css.meta}>GitHub ↗</span>
           </button>
-          {npmLatest !== null && isNewerVersion(npmLatest, PLUGIN_VERSION) && (
-            <button type="button" className={css.navAboutUpdate} title="点击自动更新（下载最新 npm 版，完成后请重启 DSH）" disabled={updating} onClick={() => { void doUpdate() }}>
-              {updating ? ' 更新中…' : ` 更新到 v${npmLatest}`}
-            </button>
-          )}
         </div>
         {/* 窗口控制：最小化 / 关闭（与工作台页头一致） */}
         <button type="button" className={css.headChip} title="最小化" aria-label="最小化" onClick={() => { onMinimize?.() }}><Minus size={14} /></button>

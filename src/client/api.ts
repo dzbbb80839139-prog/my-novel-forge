@@ -28,7 +28,6 @@ import {
   type AdaptRewriteFrame,
   type AdaptMaterializeSaveRequest,
   type AdaptMaterializeSaveResponse,
-  type PluginUpdateResponse,
   type LlmTestResponse,
   type NovelConfig,
   type PlanResponse,
@@ -214,7 +213,7 @@ export class NovelApi {
     return postJson<ForeshadowResponse>(NOVEL_API.foreshadow, req)
   }
 
-  async exportBook(format: 'txt' | 'md' | 'json', scope: import('../protocol.ts').ExportScope = 'book'): Promise<ExportResponse> {
+  async exportBook(format: 'txt' | 'md' | 'json' | 'docx', scope: import('../protocol.ts').ExportScope = 'book'): Promise<ExportResponse> {
     return postJson<ExportResponse>(NOVEL_API.exportBook, { format, scope })
   }
 
@@ -265,9 +264,7 @@ export class NovelApi {
   }
 
   /** 插件自更新：在 DSH profile 目录拉取最新 npm 版（需重启 DSH 生效）。 */
-  async pluginUpdate(): Promise<PluginUpdateResponse> {
-    return postJson<PluginUpdateResponse>(NOVEL_API.pluginUpdate, {})
-  }
+
 
   /** 书架快照。 */
   async bookshelf(): Promise<import('../protocol.ts').BookshelfSnapshot> {
@@ -334,6 +331,11 @@ export class NovelApi {
   /** 文本洗稿：改写去重、换种说法。 */
   async rewriteText(text: string): Promise<{ result: string }> {
     return postJson<{ result: string }>(NOVEL_API.rewriteText, { text })
+  }
+
+  /** 抓取网页正文（工坊自带抓取器，不依赖宿主插件）。 */
+  async fetchUrl(url: string): Promise<{ url?: string; title?: string; text?: string; chars?: number; charset?: string; truncated?: boolean; error?: string }> {
+    return postJson<{ url?: string; title?: string; text?: string; chars?: number; charset?: string; truncated?: boolean; error?: string }>(NOVEL_API.fetchUrl, { url })
   }
 
   /** 创意灵感。 */

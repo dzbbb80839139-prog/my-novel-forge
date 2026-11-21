@@ -10,6 +10,7 @@
 
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { stripChapterHeadings } from './strip-headings.ts'
+import { fetchPage } from './fetch-page.ts'
 import { spawn } from 'node:child_process'
 import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join, basename, extname, resolve } from 'node:path'
@@ -135,7 +136,6 @@ import {
   type AdaptMaterializeSaveRequest,
   type AdaptMaterializeSaveResponse,
   type AdaptRewriteFrame,
-  type PluginUpdateResponse,
   type MarketRadarRequest,
   type MarketRadarBriefRequest,
   type ProductionFoundation,
@@ -429,18 +429,6 @@ function backfillReviewFacts(project: ProjectState, chapterNo: number, review: A
   if (facts.length === 0) return
   project.facts ??= []
   for (const text of facts) project.facts.push({ chapterNo, text })
-}
-
-/**
- * The profile this host booted (`--profile <name>` on the dsh CLI invocation).
- * Profile-scoped paths must not assume a name: the shipped template is `web`,
- * but a custom profile (`web-alpha`) is the one actually running.
- * @returns the profile name, or undefined when the flag is absent.
- */
-function argvProfile(): string | undefined {
-  const flag = process.argv.indexOf('--profile')
-  const value = flag === -1 ? undefined : process.argv[flag + 1]
-  return value !== undefined && !value.startsWith('-') ? value : undefined
 }
 
 /**
@@ -1221,7 +1209,11 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
         writeJson(res, 400, { error: '输出目录中没有项目' })
         return
       }
-      const format: 'txt' | 'md' | 'json' = body?.format === 'json' ? 'json' : body?.format === 'md' ? 'md' : 'txt'
+      const format: 'txt' | 'md' | 'json' | 'docx' =
+        body?.format === 'json' ? 'json'
+          : body?.format === 'md' ? 'md'
+            : body?.format === 'docx' ? 'docx'
+              : 'txt'
       // 导出范围：整本正文 / 设定 / 规划 / 角色 / 质检记录 / 项目 JSON。
       const scope: ExportScope = body?.scope !== undefined && EXPORT_SCOPE_VALUES.includes(body.scope) ? body.scope : 'book'
       try {
@@ -1914,6 +1906,45 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
   })
   const distillTextRoute = makeTextToolRoute(NOVEL_API.distillText, 'distill')
   const rewriteTextRoute = makeTextToolRoute(NOVEL_API.rewriteText, 'rewrite')
+
+  // ------------------------------------------------------- fetch url (self-contained)
+  /**
+   * 网页抓取：工坊自带，不依赖任何宿主插件。
+   *
+   * 原实现借道 dsh-read-url 注册的 read_url 工具，但那条路要求宿主装插件、
+   * 且插件不注册工具时整个功能失效。改为自带 fetch（见 fetch-page.ts），
+   * 编码嗅探、正文抽取都在本地完成。
+   */
+  const fetchUrlRoute: WebRoute = {
+    kind: 'exact',
+    path: NOVEL_API.fetchUrl,
+    handler: async (req, res) => {
+      if (!guard(req, res, 'POST')) return
+      const body = await readJsonBody<{ url?: string }>(req)
+      const url = (body?.url ?? '').trim()
+      if (url === '') {
+        writeJson(res, 400, { error: '缺少网址' })
+        return
+      }
+      try {
+        const page = await fetchPage(url)
+        if (page.text.trim() === '') {
+          writeJson(res, 200, { error: '抓到的正文为空：该页可能需要登录、由脚本渲染，或本身没有可读文字' })
+          return
+        }
+        writeJson(res, 200, {
+          url: page.url,
+          title: page.title,
+          text: page.text,
+          chars: page.text.length,
+          charset: page.charset,
+          truncated: page.truncated,
+        })
+      } catch (error) {
+        writeJson(res, 500, { error: (error as Error).message })
+      }
+    },
+  }
 
   // ---------------------------------------------------------- idea-inspiration
   /** 创意灵感：一句话/题材 → 多方向开书灵感。 */
@@ -3436,29 +3467,6 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
     },
   }
 
-  // ---------------------------------------------------------- plugin update
-  /** 插件自更新：在 DSH profile 目录拉取最新 npm 版（仅下载，需重启 DSH 生效）。 */
-  const pluginUpdateRoute: WebRoute = {
-    kind: 'exact',
-    path: NOVEL_API.pluginUpdate,
-    handler: async (req, res) => {
-      if (!guard(req, res, 'POST')) return
-      const profileDir = dshHomePath('profiles', argvProfile() ?? 'web')
-      const response: PluginUpdateResponse = await new Promise((resolve) => {
-        const child = spawn('pnpm', ['add', '@local/my-novel-forge@latest'], { cwd: profileDir, shell: true })
-        let acc = ''
-        child.stdout.on('data', (d: Buffer) => { acc += String(d) })
-        child.stderr.on('data', (d: Buffer) => { acc += String(d) })
-        child.on('error', (error) => resolve({ ok: false, message: '无法执行更新：' + error.message }))
-        child.on('close', (code) => {
-          if (code === 0) resolve({ ok: true, message: '已更新到最新版本，请重启 DSH 生效。' })
-          else resolve({ ok: false, message: '更新失败（退出码 ' + code + '）：' + acc.slice(-400) })
-        })
-      })
-      writeJson(res, 200, response)
-    },
-  }
-
   // ------------------------------------------------------- outline suggest
   /** 开书想法 → AI 大纲：2-3 个可选方案（支持暂留换批：count 只补空槽 + exclude 避开已留方向）。 */
   const outlineSuggestRoute: WebRoute = {
@@ -4223,6 +4231,7 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
     bookAnalysisRoute,
     distillTextRoute,
     rewriteTextRoute,
+    fetchUrlRoute,
     nameForgeRoute,
     ideaInspirationRoute,
     marketIdeaInspirationRoute,
@@ -4267,7 +4276,6 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
     moveOutputDirRoute,
     bookSettingsRoute,
     openFolderRoute,
-    pluginUpdateRoute,
     outlineSuggestRoute,
     outlineReverseRoute,
     llmTestRoute,
