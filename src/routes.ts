@@ -143,6 +143,7 @@ import {
   type GenreNode,
   type KnowledgeRequest,
   type BookAnalysisRequest,
+  type TextToolRequest,
   type IdeaInspirationRequest,
   type DirectorRequest,
   type DirectorTodo,
@@ -179,6 +180,7 @@ import {
   runMarketRadar,
   runMarketCreativeBrief,
   runBookAnalysis,
+  runTextTool,
   runIdeaInspiration,
   runNameForge,
   runMarketIdeaInspiration,
@@ -556,9 +558,9 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
       if (project === undefined) {
         projectPayload = undefined
       } else if (slim) {
-        truncations.push('slim=1：正文/beats/图集/道藏/大世界/资产等重字段未返回，大纲仅返回前 200 字')
+        truncations.push('slim=1：正文/beats/图集/提炼/大世界/资产等重字段未返回，大纲仅返回前 200 字')
         // slim 瘦身：轮询/角标只需章节状态与分数 + 轻量元数据，
-        // 去掉正文、beats、图集（base64）、道藏/大世界/资产等重字段，避免长书轮询反复传输大体积。
+        // 去掉正文、beats、图集（base64）、提炼/大世界/资产等重字段，避免长书轮询反复传输大体积。
         projectPayload = {
           bookName: project.bookName,
           outline: project.outline.slice(0, 200),
@@ -1889,6 +1891,30 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
     },
   }
 
+  // ------------------------------------------------------- distill / rewrite text
+  /** 文本工具：蒸馏（提炼风格/套路）/ 洗稿（改写去重），共用处理器。 */
+  const makeTextToolRoute = (path: string, mode: 'distill' | 'rewrite'): WebRoute => ({
+    kind: 'exact',
+    path,
+    handler: async (req, res) => {
+      if (!guard(req, res, 'POST')) return
+      const config = getConfig()
+      const body = await readJsonBody<TextToolRequest>(req)
+      if (body === undefined || (body.text ?? '').trim().length < 50) {
+        writeJson(res, 400, { error: '文本过短（<50 字符）' })
+        return
+      }
+      try {
+        const text = await runTextTool(ctx, config, mode, body)
+        writeJson(res, 200, { result: text })
+      } catch (error) {
+        writeJson(res, 500, { error: (error as Error).message })
+      }
+    },
+  })
+  const distillTextRoute = makeTextToolRoute(NOVEL_API.distillText, 'distill')
+  const rewriteTextRoute = makeTextToolRoute(NOVEL_API.rewriteText, 'rewrite')
+
   // ---------------------------------------------------------- idea-inspiration
   /** 创意灵感：一句话/题材 → 多方向开书灵感。 */
   const ideaInspirationRoute: WebRoute = {
@@ -2715,7 +2741,7 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
   }
 
   // ---------------------------------------------------------- bible patch
-  /** 道藏局部修补（世界观规则/红线/风格）。 */
+  /** 提炼局部修补（世界观规则/红线/风格）。 */
   const biblePatchRoute: WebRoute = {
     kind: 'exact',
     path: NOVEL_API.biblePatch,
@@ -2726,7 +2752,7 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
       const project = requireProjectAt(req, res, body as { bookId?: string } | undefined)
       if (project === undefined) return
       if (project.bible === undefined) {
-        writeJson(res, 400, { error: '尚未生成道藏，请先生成' })
+        writeJson(res, 400, { error: '尚未生成提炼，请先生成' })
         return
       }      if (Array.isArray(body?.worldRules)) project.bible.worldRules = body.worldRules.filter(r => r.trim() !== '')
       if (Array.isArray(body?.redLines)) project.bible.redLines = body.redLines.filter(r => r.trim() !== '')
@@ -4195,6 +4221,8 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
     marketRadarBriefRoute,
     knowledgeRoute,
     bookAnalysisRoute,
+    distillTextRoute,
+    rewriteTextRoute,
     nameForgeRoute,
     ideaInspirationRoute,
     marketIdeaInspirationRoute,

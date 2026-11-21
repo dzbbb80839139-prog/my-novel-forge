@@ -17,7 +17,7 @@ import { stripChapterHeadings } from './strip-headings.ts'
 import { alignPlotlineProgress } from './plotline-align.ts'
 import { join, basename, extname } from 'node:path'
 import { tmpdir } from 'node:os'
-import { createUserMessage, BlockAssembler, ReasoningEffortId, type GenerateOptions, type Message, type StreamChunk } from '@deepseek-ai/dsh-llm'
+import { createUserMessage, BlockAssembler, type GenerateOptions, type Message, type StreamChunk } from '@deepseek-ai/dsh-llm'
 import type { Context } from '@deepseek-ai/cordis'
 import { BUILTIN_GENRE_LIBRARY, BUILTIN_PROGRESSION_MODES, effectiveAntiAiRules, emptyProjectAssets, recommendStylePreset, styleEngineSystemPrompt, styleFormulaSystemPrompt } from './assets.ts'
 import { scanAiFlavor } from './ai-scan.ts'
@@ -101,6 +101,7 @@ import type {
   MarketCreativeBrief,
   BookAnalysisRequest,
   BookAnalysisResult,
+  TextToolRequest,
   IdeaInspirationRequest,
   IdeaInspirationResult,
   NameCategory,
@@ -216,7 +217,7 @@ export type VolatileField = (typeof VOLATILE_FIELDS)[number]
 
 /**
  * 并发保护：长任务（章节计划生成/正文生成）在内存中持有旧快照，
- * 期间其他请求可能修改了「易变字段」（道藏/角色库/剧情线/人物志存档/简介/封面）。
+ * 期间其他请求可能修改了「易变字段」（提炼/角色库/剧情线/人物志存档/简介/封面）。
  * 保存前用磁盘最新版本合并这些字段，避免旧快照覆盖新修改（曾导致角色卡丢失）。
  *
  * ⚠️ `keep` 不是可选的礼貌参数，而是本函数唯一的正确用法保证：
@@ -443,10 +444,12 @@ async function complete(
     const live = beginLiveCall({ label: liveLabel, model, system: options.system, user: options.user })
     // 用户偏好先成型，再经能力层按**实际模型**收敛：同一模型走不同 provider/中转
     // 时约束不变，换备用模型后约束随新模型重算。
+    // 思考档位一律不显式下发：不同模型/中转对 reasoning_effort 的支持参差不齐
+    // （推理模型可能不接受 off，普通模型可能不接受任何档位），省略该参数、由服务端
+    // 用模型自身默认值，才能让任何能连通的模型都可用。设置里的两个思考档位因此不再生效。
     const converged = convergeRequestParams(
       {
         temperature: options.temperature ?? 0.7,
-        reasoningEffort: options.reasoning ?? config.reasoningEffort ?? 'off',
       },
       model,
       {
@@ -465,7 +468,6 @@ async function complete(
       system: options.system,
       maxTokens: options.maxTokens ?? config.maxTokens,
       ...(converged.temperature === undefined ? {} : { temperature: converged.temperature }),
-      ...(converged.reasoningEffort === undefined ? {} : { reasoningEffort: ReasoningEffortId(converged.reasoningEffort) }),
     }
     const assembler = new BlockAssembler()
     try {
@@ -685,7 +687,7 @@ export async function extractBible(ctx: Context, config: NovelConfig, outline: s
   }
   const facts = (project?.facts ?? []).slice(-40)
   const user = [
-    `请为下面这部小说提炼道藏：\n\n${outline}`,
+    `请为下面这部小说提炼设定：\n\n${outline}`,
     facts.length > 0
       ? `\n\n【已写章节事实（编年录）】用于确认真实角色姓名与已确立设定；忠于大纲，不要新增大纲外设定：\n${facts.map(f => `[第${f.chapterNo}章] ${f.text.slice(0, 100)}`).join('\n')}`
       : '',
@@ -740,7 +742,7 @@ export async function extractBible(ctx: Context, config: NovelConfig, outline: s
     generatedAt: new Date().toISOString(),
   }
   if (bible.worldRules.length === 0 && bible.characters.length === 0 && bible.redLines.length === 0) {
-    throw new Error('道藏生成失败：模型没有返回有效内容')
+    throw new Error('提炼失败：模型没有返回有效内容')
   }
   return bible
 }
@@ -827,7 +829,7 @@ export async function planChapters(
   // 续写模式大纲注入：精简大纲（≤2 万字）直接全量，避免误伤「分卷收官规划」（如第五卷双结局）；
   // 超大 docx 大纲才节选——截到「记忆梗」之前，保留分卷大纲与红线，去掉后续冗余。
   // 续写模式大纲注入：精简大纲（≤2 万字）直接全量；超大大纲按优先级裁剪——
-  // 优先保留当前卷/红线/道藏规则，不绑定任何特定书的章节标题。
+  // 优先保留当前卷/红线/提炼规则，不绑定任何特定书的章节标题。
   const outlineBlock = continuation
     ? (() => {
         if (project.outline.length <= 20000) return project.outline
@@ -1200,7 +1202,7 @@ export async function reviewChapter(
 
 /**
  * 审查「任意正文文本」（作者手动编辑后的草稿，不落盘）。
- * 复用审稿提示词与红线/道藏/反AI规则；仅返回报告，不改文件不改状态。
+ * 复用审稿提示词与红线/提炼/反AI规则；仅返回报告，不改文件不改状态。
  */
 export async function reviewChapterText(
   ctx: Context,
@@ -1521,7 +1523,7 @@ export async function refreshLinesFor(
   return alignPlotlineProgress(raw.items, lines)
 }
 
-/**  AI 从全书提炼角色库：大纲 + 道藏 + 编年录 + 章节摘要 → 结构化角色清单。 */
+/**  AI 从全书提炼角色库：大纲 + 提炼 + 编年录 + 章节摘要 → 结构化角色清单。 */
 export async function extractRoles(
   ctx: Context,
   config: NovelConfig,
@@ -1548,7 +1550,7 @@ export async function extractRoles(
     const text = stripChapterHeadings(body)
     if (text.length > 0) excerptParts.push(`第${chapter.no}章《${chapter.title}》\n${text.slice(0, 3000)}`)
   }
-  // 出场频次统计：道藏角色名 + 已收录角色，扫全书统计出现次数，传给 LLM 做重要性判断参考
+  // 出场频次统计：提炼角色名 + 已收录角色，扫全书统计出现次数，传给 LLM 做重要性判断参考
   const freqCandidates = new Set<string>()
   for (const c of project.bible?.characters ?? []) freqCandidates.add(c.name)
   for (const r of existingRoles) freqCandidates.add(r.name)
@@ -2355,7 +2357,6 @@ export async function* rewriteChapterStream(
     // reasoning (a transform task) so the whole budget goes to the body.
     maxTokens: Math.max(config.maxTokens, 20000),
     temperature: 0.7,
-    reasoningEffort: ReasoningEffortId('off'),
   }
 
   yield { frame: 'start' }
@@ -2418,7 +2419,6 @@ export async function* polishChapterStream(
     // (transform task — the entire budget should go to the body).
     maxTokens: Math.max(config.maxTokens, 20000),
     temperature: 0.5,
-    reasoningEffort: ReasoningEffortId('off'),
   }
   yield { frame: 'start' }
   // 兜底逻辑（主→备用、maxTokens 重算、max-tokens 判定）统一在 stream-fallback。
@@ -2983,7 +2983,7 @@ export async function materializeAdaptedBook(
   const outDir = (args.outputDir ?? '').trim()
   if (outDir === '') throw new NovelActionError('contract', '未指定新书输出目录')
   const mappings = args.proposal?.mappings ?? []
-  // 源文导入临时项目（复用角色/道藏/世界提炼：这些函数读取 config.outputDir 下的章节文件）。
+  // 源文导入临时项目（复用角色/提炼/世界提炼：这些函数读取 config.outputDir 下的章节文件）。
   const tmpDir = join(tmpdir(), 'my-novel-forge-adapt-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8))
   try {
     importBookTextFromText(args.text, tmpDir, bookName)
@@ -2991,7 +2991,7 @@ export async function materializeAdaptedBook(
     if (sourceProject === undefined) throw new Error('临时项目创建失败')
     const sourceConfig: NovelConfig = { ...config, outputDir: tmpDir }
 
-    // 源书道藏 + 角色库 + 大世界。
+    // 源书提炼 + 角色库 + 大世界。
     // 注意：extractWorld/extractRoles 内部读取 project.outline，所以要先把源文大纲写进临时项目。
     const srcOutline = (args.outline ?? '').trim() !== '' ? (args.outline ?? '').trim() : fallbackSourceOutline(sourceProject)
     sourceProject.outline = srcOutline
@@ -3056,7 +3056,7 @@ function applyAdaptationMappings(text: string, mappings: AdaptationMapping[]): s
   return applyAdaptationReplacements(text, mappings).adaptedText
 }
 
-/** 改编道藏：把人名/术语/势力按映射表替换。 */
+/** 改编提炼：把人名/术语/势力按映射表替换。 */
 function applyMappingsToBible(bible: StoryBible, mappings: AdaptationMapping[]): StoryBible {
   const t = (s: string): string => applyAdaptationMappings(s, mappings)
   return {
@@ -3327,7 +3327,7 @@ async function auditBatch(
   const user = [
     '请对以下小说做一致性质检。',
     project.bible !== undefined
-      ? '道藏：\n' + [
+      ? '提炼：\n' + [
           project.bible.worldRules.length > 0 ? `世界规则：\n${project.bible.worldRules.map(r => `- ${r}`).join('\n')}` : '',
           project.bible.redLines.length > 0 ? `写作红线：\n${project.bible.redLines.map(r => `- ${r}`).join('\n')}` : '',
           project.bible.characters.length > 0 ? `角色：\n${project.bible.characters.map(ch => `- ${ch.name}（${ch.traits.join('、')}）`).join('\n')}` : '',
@@ -3420,7 +3420,7 @@ export function bookOverview(project: ProjectState, scope: 'recent' | 'full' | n
   s.push(`【大纲全文】\n${project.outline}`)
   if (project.bible !== undefined) {
     const bible = project.bible
-    s.push('【道藏】')
+    s.push('【提炼】')
     if (bible.genre !== '') s.push(`题材基调：${bible.genre}`)
     if (bible.worldRules.length > 0) s.push('世界规则：\n' + bible.worldRules.map(r => `- ${r}`).join('\n'))
     if (bible.characters.length > 0) {
@@ -3477,7 +3477,7 @@ export function bookOverview(project: ProjectState, scope: 'recent' | 'full' | n
 
 /** 一条影响分析结果（改动波及处）。 */
 export interface ImpactItem {
-  /** 位置：章节号 / 大纲 / 道藏 / 大世界 / 事实库 / 简介。 */
+  /** 位置：章节号 / 大纲 / 提炼 / 大世界 / 事实库 / 简介。 */
   location: string
   /** 原文片段（定位用）。 */
   quote: string
@@ -3500,14 +3500,14 @@ export async function analyzeImpact(
 ): Promise<ImpactItem[]> {
   const system = impactAnalysisSystemPrompt()
   const written = project.chapters.filter(c => c.status !== 'pending' && c.status !== 'generating')
-  // 轻量 base：大纲节选 + 道藏要点 + 编年录最近 40 条（替代全量 bookOverview，
+  // 轻量 base：大纲节选 + 提炼要点 + 编年录最近 40 条（替代全量 bookOverview，
   // 定位主要靠各批章节节选原文）。
   const base = [
     `要做的修改：${change}`,
     '以下为全书设定与规则要点（章节为分批节选）：',
     `大纲节选：\n${project.outline.slice(0, 2000)}`,
     project.bible !== undefined
-      ? `道藏：${project.bible.worldRules.length} 条世界规则 / ${project.bible.redLines.length} 条红线 / 人物 ${project.bible.characters.map(c => c.name).join('、')}`
+      ? `提炼：${project.bible.worldRules.length} 条世界规则 / ${project.bible.redLines.length} 条红线 / 人物 ${project.bible.characters.map(c => c.name).join('、')}`
       : '',
     (project.facts ?? []).length > 0
       ? `编年录最近 40 条：\n${(project.facts ?? []).slice(-40).map(f => `[第${f.chapterNo}章] ${f.text}`).join('\n')}`
@@ -3541,7 +3541,7 @@ export async function analyzeImpact(
   return items.slice(0, 30)
 }
 
-/** 提炼大世界：从大纲 + 道藏生成结构化境界体系/区域/势力。 */
+/** 提炼大世界：从大纲 + 提炼生成结构化境界体系/区域/势力。 */
 export async function extractWorld(
   ctx: Context,
   config: NovelConfig,
@@ -3620,7 +3620,7 @@ export async function refreshCharacters(
   project: ProjectState,
   outputDir: string,
 ): Promise<RoleStatusCard[]> {
-  // 名单优先用角色库（主表）；无角色库时退回道藏角色卡。
+  // 名单优先用角色库（主表）；无角色库时退回提炼角色卡。
   const rawRoster = (((project.roles ?? []).length > 0 ? project.roles : project.bible?.characters) ?? []) as Array<{ name: string; traits?: string[]; role?: string; roleLabel?: string }>
   const roster = rawRoster.map(r => ({
     name: r.name,
@@ -3680,7 +3680,7 @@ export async function refreshCharacters(
       appearances: entry?.chapters.size ?? 0,
     })
   }
-  // 名单外的角色（从事实库中识别到但不在道藏名单）仅当有出场统计时补充。
+  // 名单外的角色（从事实库中识别到但不在提炼名单）仅当有出场统计时补充。
   for (const [name, entry] of stat) {
     if (!cards.some(c => c.name === name)) {
       cards.push({
@@ -3820,7 +3820,7 @@ export async function runMarketRadar(
     '输出必须是合法 JSON 对象，不要输出任何其他文字。',
     'JSON 结构：{"signals":[{"id":"短横线稳定id","kind":"genre|protagonist|advantage|opening|relationship|title_pattern|opportunity|crowding","title":"一句话","detail":"说明（含读者满足点）","direction":"current|rising|stable|falling","recommended":true|false}], "productionFoundation":{"genre":{"existingId":null或资源名,"name":"题材名","description":"说明","template":"写法指引"},"primaryStoryMode":{"existingId":null或资源名,"name":"模式名","driver":"驱动力","readerExpectation":"读者期待"},"secondaryStoryMode":{同primary,可null或省略}}}',
   ].filter(s => s !== '').join('\n\n')
-  const text = await complete(ctx, config, { system: marketRadarSystemPrompt(), user, temperature: 0.4, maxTokens: Math.max(config.maxTokens, 8000), liveLabel: '题材雷达' })
+  const text = await complete(ctx, config, { system: marketRadarSystemPrompt(), user, temperature: 0.4, maxTokens: Math.max(config.maxTokens, 8000), reasoning: config.analysisReasoning ?? 'low', liveLabel: '题材雷达' })
   const raw = parseJsonObject<Record<string, unknown>>(text)
   const signalAs = (v: unknown): MarketRadarSignal[] => Array.isArray(v)
     ? v.filter((x): x is Record<string, unknown> => typeof x === 'object' && x !== null)
@@ -3893,7 +3893,7 @@ export async function runMarketCreativeBrief(ctx: Context, config: NovelConfig, 
     'JSON 结构：{"promptBlock":"可直接指导题材/金手指/首章爆点/整书方向的约束","openingIdea":"一段可直接开书的中文起始想法（主角身份、金手指或核心优势、开局事件、近期目标；不输出标题/大纲/Markdown）","coreAdvantage":"主角能做什么（含触发条件/使用边界/成长方向或代价至少一项）","bookSellingPoint":"读者持续追读的核心满足点","first30ChapterPromise":"前30章必须兑现的阶段结果/关系变化/能力成长"}',
     '严禁复用榜单作品的人名、专有设定、简介句子和完整书名；一律使用身份或通用场景称谓，不得输出具体人名/作品名。',
   ].filter(s => s !== '').join('\n\n')
-  const text = await complete(ctx, config, { system: marketRadarSystemPrompt(), user, temperature: 0.5, maxTokens: Math.max(config.maxTokens, 4000), liveLabel: '开书创意' })
+  const text = await complete(ctx, config, { system: marketRadarSystemPrompt(), user, temperature: 0.5, maxTokens: Math.max(config.maxTokens, 4000), reasoning: config.analysisReasoning ?? 'low', liveLabel: '开书创意' })
   const cb = parseJsonObject<Record<string, unknown>>(text)
   return {
     promptBlock: typeof cb.promptBlock === 'string' ? cb.promptBlock.slice(0, 800) : '',
@@ -3921,6 +3921,41 @@ export async function runBookAnalysis(ctx: Context, config: NovelConfig, req: Bo
     lessons: arr(raw.lessons),
     risks: arr(raw.risks),
   }
+}
+
+/** 文本蒸馏：从范文提炼可复用的写作风格/套路 DNA（纯文本输出）。 */
+const DISTILL_TEXT_SYSTEM = `你是一名资深网文编辑，擅长拆解范文、提炼可复用的写作内核。
+用户给你一段范文，请输出一份「蒸馏报告」（Markdown 纯文本，不要套 JSON），包含且仅包含这几节：
+## 题材与基调
+## 叙事节奏与结构套路
+## 爽点与钩子设计
+## 语言风格（句式/用词/对话占比等可观察特征）
+## 可复用的套路 DNA（条目化，写成能迁移到新书的规则）
+只基于给定文本，不臆造；每节 2-5 条、具体可操作。不要复述原文大段内容。`
+
+/** 文本洗稿：把段落改写去重、换种说法（保持原意，纯文本输出）。 */
+const REWRITE_TEXT_SYSTEM = `你是一名网文改写编辑。用户给你一段文字，请在不改变原意、情节与事实的前提下改写：
+- 换句式、换用词、调整节奏，显著降低与原文的字面重复；
+- 保留原有人名、地名、设定与关键事件，不新增设定；
+- 保持中文网文的可读性，不要写成机械的同义词替换；
+- 直接输出改写后的正文（纯文本），不要解释、不要加标题、不要附注。`
+
+/**
+ * 灵感策划文本工具：蒸馏（提炼风格/套路）与洗稿（改写去重）。
+ * 二者共用一次 LLM 调用管线，仅系统提示词不同，输出均为纯文本。
+ */
+export async function runTextTool(ctx: Context, config: NovelConfig, mode: 'distill' | 'rewrite', req: TextToolRequest): Promise<string> {
+  const system = mode === 'distill' ? DISTILL_TEXT_SYSTEM : REWRITE_TEXT_SYSTEM
+  const user = (req.text ?? '').slice(0, 12000)
+  const text = await complete(ctx, config, {
+    system,
+    user,
+    temperature: mode === 'distill' ? 0.4 : 0.8,
+    maxTokens: Math.max(config.maxTokens, 4000),
+    reasoning: config.analysisReasoning ?? 'low',
+    liveLabel: mode === 'distill' ? '文本蒸馏' : '文本洗稿',
+  })
+  return text.trim()
 }
 
 /** 创意灵感：一句话/题材 → 多方向开书灵感。 */
@@ -3993,7 +4028,7 @@ export async function runMarketIdeaInspiration(
     '输出必须是合法 JSON 对象。',
     'JSON 结构：{"ideas":[{"title":"书名/门面","hook":"一句话钩子/开局爆点","genre":"题材","pov":"主角视角/身份","payoff":"长期追读兑现"}]}',
   ].filter(s => s !== '').join('\n\n')
-  const text = await complete(ctx, config, { system, user, temperature: 0.8, maxTokens: Math.max(config.maxTokens, 4000), liveLabel: '市场灵感' })
+  const text = await complete(ctx, config, { system, user, temperature: 0.8, maxTokens: Math.max(config.maxTokens, 4000), reasoning: config.analysisReasoning ?? 'low', liveLabel: '市场灵感' })
   const raw = parseJsonObject<Record<string, unknown>>(text)
   const str = (v: unknown): string => typeof v === 'string' ? v.trim().slice(0, 200) : ''
   const arr = (v: unknown): Array<{ title: string; hook: string; genre: string; pov: string; payoff: string }> => Array.isArray(v)
@@ -4227,7 +4262,7 @@ function renderPairs(pairs: Array<[string, string | undefined]>): string {
     .join('\n')
 }
 
-/** 渲染项目设定（卷首语 / 开书定盘 / 总纲 / 道藏 / 大世界 / 写作资产）。 */
+/** 渲染项目设定（卷首语 / 开书定盘 / 总纲 / 提炼 / 大世界 / 写作资产）。 */
 function renderSettings(project: ProjectState): string {
   const out: string[] = [`# ${project.bookName} · 项目设定`, '']
   out.push('## 卷首语 / 简介', '', project.blurb !== undefined && project.blurb !== '' ? project.blurb : '（未填写）', '')
@@ -4244,12 +4279,12 @@ function renderSettings(project: ProjectState): string {
   out.push('## 总纲', '', project.outline.trim() === '' ? '（未导入）' : project.outline.trim(), '')
   const bible = project.bible
   if (bible !== undefined) {
-    out.push('## 道藏', '')
+    out.push('## 提炼', '')
     if (bible.worldRules.length > 0) out.push('### 世界规则', '', bible.worldRules.map((r, i) => `${i + 1}. ${r}`).join('\n'), '')
     if (bible.redLines.length > 0) out.push('### 写作红线', '', bible.redLines.map(r => `- ${r}`).join('\n'), '')
     if (bible.style.length > 0) out.push('### 文风', '', bible.style.map(x => `- ${x}`).join('\n'), '')
     if (bible.characters.length > 0) {
-      out.push('### 角色（道藏）', '')
+      out.push('### 角色（提炼）', '')
       for (const ch of bible.characters) {
         out.push(`- **${ch.name}**（${ch.role}）`)
         if (ch.traits.length > 0) out.push(`  - 标签：${ch.traits.join('、')}`)

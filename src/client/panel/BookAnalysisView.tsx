@@ -6,6 +6,7 @@ import type { NovelApi } from '../api.ts'
 import type { BookAnalysisResult } from '../../protocol.ts'
 import css from './panel.module.css'
 import { SubPage } from './SubPage.tsx'
+import TextFilePicker from './TextFilePicker.tsx'
 
 const SECTIONS: Array<{ key: keyof BookAnalysisResult; label: string; color: string }> = [
   { key: 'sellingPoints', label: '卖点', color: 'var(--nf-success)' },
@@ -40,7 +41,8 @@ export default function BookAnalysisView({ api }: { api: NovelApi }): JSX.Elemen
       )}
     >
       <div className={`${css.card} ${css.settingsCard}`} style={{ gap: 'var(--nf-space-10)' }}>
-        <span className={css.meta}>粘贴文本后点开始分析，结果按卖点/结构/可借鉴/风险分四区呈现。</span>
+        <TextFilePicker onText={(t) => { setText(t); setError('') }} onError={setError} />
+        <span className={css.meta}>粘贴文本或拖入 docx / md / txt 文件后点开始分析，结果按卖点/结构/可借鉴/风险分四区呈现。</span>
         <textarea className={css.input} style={{ minHeight: 180, resize: 'vertical' }} value={text} onChange={e => setText(e.target.value)} placeholder="粘贴要分析的书/章节正文…" />
       </div>
 

@@ -3,7 +3,7 @@
  * 导航复用工作区 .panelNav 玻璃卡片样式（同款），导航项为作者级：书架/改编/资产库/全局资产库/AI 进度/设置。
  */
 import { useState, useRef, useEffect } from 'react'
-import { Library, Boxes, Brush, Radar, FileSearch, Lightbulb, Minus, X, ArrowLeft } from 'lucide-react'
+import { Library, Boxes, Brush, Radar, FileSearch, Lightbulb, Minus, X, ArrowLeft, FlaskConical, Wand2 } from 'lucide-react'
 import type { NovelApi } from '../api.ts'
 import type { BookshelfSnapshot } from '../../protocol.ts'
 import { ShelfView } from './ShelfView.tsx'
@@ -16,6 +16,7 @@ import LiveFeedLog from './LiveFeedLog.tsx'
 import MarketRadarView from './MarketRadarView.tsx'
 import BookAnalysisView from './BookAnalysisView.tsx'
 import IdeaInspirationView from './IdeaInspirationView.tsx'
+import TextToolView from './TextToolView.tsx'
 import css from './panel.module.css'
 import { useDialogFocus } from './ConfirmDialog.tsx'
 
@@ -45,7 +46,7 @@ function isNewerVersion(candidate: string, current: string): boolean {
   return false
 }
 
-type AuthorNav = 'shelf' | 'adapt' | 'assets' | 'library' | 'marketRadar' | 'bookAnalysis' | 'ideaInspiration';
+type AuthorNav = 'shelf' | 'adapt' | 'assets' | 'library' | 'marketRadar' | 'bookAnalysis' | 'ideaInspiration' | 'distill' | 'rewrite';
 type AuthorSubNav = AuthorNav;
 
 /** 顶层 tab（横向，墨案：创作 / 灵感策划 / 资产 / 设置）+ 组内二级页。 */
@@ -65,11 +66,13 @@ const NAV_TABS: Array<{
     ],
   },
   {
-    id: 'marketRadar', label: '灵感策划', icon: <Radar size={18} />, hint: '题材雷达 · 创意灵感 · 书分析',
+    id: 'marketRadar', label: '灵感策划', icon: <Radar size={18} />, hint: '题材雷达 · 创意灵感 · 书分析 · 蒸馏 · 洗稿',
     children: [
       { id: 'marketRadar', label: '题材雷达', icon: <Radar size={14} /> },
       { id: 'ideaInspiration', label: '创意灵感', icon: <Lightbulb size={14} /> },
       { id: 'bookAnalysis', label: '书分析', icon: <FileSearch size={14} /> },
+      { id: 'distill', label: '蒸馏', icon: <FlaskConical size={14} /> },
+      { id: 'rewrite', label: '洗稿', icon: <Wand2 size={14} /> },
     ],
   },
   {
@@ -287,6 +290,7 @@ export function AuthorHome({ api, shelf, onOpenBook, onReadBook, onAddBook, onIm
                 const parent: Partial<Record<AuthorNav, AuthorNav>> = {
                   adapt: 'shelf',
                   marketRadar: 'shelf', ideaInspiration: 'marketRadar', bookAnalysis: 'marketRadar',
+                  distill: 'marketRadar', rewrite: 'marketRadar',
                   assets: 'shelf', library: 'assets',
                 }
                 setNav(parent[nav] ?? 'shelf')
@@ -303,6 +307,8 @@ export function AuthorHome({ api, shelf, onOpenBook, onReadBook, onAddBook, onIm
         {nav === 'marketRadar' && <MarketRadarView api={api} bookId={shelf?.activeBookId ?? undefined} />}
         {nav === 'ideaInspiration' && <IdeaInspirationView api={api} onUseIdea={onUseIdea} />}
         {nav === 'bookAnalysis' && <BookAnalysisView api={api} />}
+        {nav === 'distill' && <TextToolView api={api} mode="distill" />}
+        {nav === 'rewrite' && <TextToolView api={api} mode="rewrite" />}
       </div>
       {/* 设置右滑抽屉（点遮罩/✕ 回书架） */}
       {settingsOpen && (

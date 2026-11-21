@@ -4,7 +4,7 @@
  * ## 分层组装（缓存命中的纪律）
  *
  * 同一本书的连续多次调用里，输入的大部分是重复的，但各块的变化频率差着量级：
- * 固定层（写作硬性要求 + 合规红线）永不变；本书层（道藏/世界/大纲/资产/槽位）
+ * 固定层（写作硬性要求 + 合规红线）永不变；本书层（提炼/世界/大纲/资产/槽位）
  * 只随作者编辑变；本章层（伏笔/剧情线/骨架/时间线/张力）随创作进度逐章变。
  * 厂商的输入缓存按**前缀**命中——顺序写死在 prompt-cache.ts，调用方只标层。
  *
@@ -24,8 +24,8 @@ import { renderWorld } from './world.ts'
 import type { PromptEntry } from './catalog.ts'
 
 /** Build the writing system prompt (bible + outline + active foreshadows).
- *  `targetChars` 来自每章计划（规划时快照，= 设置的每章目标字数）；无则退回默认 3500。
- *  字数区间按目标动态生成（±15%，取整到百位），避免系统提示词与设置互相冲突。
+ *  `targetChars` 来自每章计划（规划时快照，= 设置的每章目标字数）；无则退回默认 2700。
+ *  字数区间按目标上下各 500 字动态生成（取整到百位），避免系统提示词与设置互相冲突。
  *  `lengthRule` 可覆盖第 1 条字数要求（整章修订/改编时按原文长度为准）。 */
 export function writeSystemPrompt(project: ProjectState, targetChars?: number, lengthRule?: string, beforeChapter?: number): string {
   const bible = project.bible
@@ -34,13 +34,13 @@ export function writeSystemPrompt(project: ProjectState, targetChars?: number, l
   const blocks: PromptBlock[] = []
 
   // ---- 固定层：永不变，排最前 ----
-  const target = targetChars !== undefined && targetChars > 0 ? targetChars : 3500
-  const lo = Math.max(1000, Math.round((target * 0.85) / 100) * 100)
-  const hi = Math.max(lo + 100, Math.round((target * 1.15) / 100) * 100)
+  const target = targetChars !== undefined && targetChars > 0 ? targetChars : 2700
+  const lo = Math.max(1000, Math.round((target - 500) / 100) * 100)
+  const hi = Math.max(lo + 100, Math.round((target + 500) / 100) * 100)
   const rules: string[] = ['写作硬性要求：']
   rules.push(lengthRule ?? `1. 每章 ${lo}-${hi} 字（目标 ${target} 字，按中文字符计），只输出章节正文，不要输出标题、章回名、作者的话或任何 Markdown 标记。`)
   rules.push('2. 以主角视角展开，动作、对话、心理描写交替推进，禁止大段设定说明。')
-  rules.push('3. 尊重大纲与道藏：人设不崩、金手指规则不自相矛盾、战力不随意膨胀。')
+  rules.push('3. 尊重大纲与提炼：人设不崩、金手指规则不自相矛盾、战力不随意膨胀。')
   rules.push('4. 章末留一个钩子（悬念、反转或新线索），吸引读者读下一章。')
   rules.push('5. 语言流畅自然，符合中文网文语感，避免翻译腔与病句。')
   rules.push('6. 对话与冲突密度：每章至少 1 处实质对话或正面对抗/交锋场面；推理与心理活动必须用动作、环境细节、微表情、对话呈现，禁止整章纯内心独白铺陈（禁止"解说式"交代线索）。')
@@ -60,10 +60,10 @@ export function writeSystemPrompt(project: ProjectState, targetChars?: number, l
   // ---- 本书层：只随作者编辑变，一章一次生成里不变 ----
   const book: string[] = []
   if (bible !== undefined) {
-    book.push('==================== 道藏（写作时严格遵守） ====================')
+    book.push('==================== 提炼（写作时严格遵守） ====================')
     if (bible.genre !== '') book.push(`题材基调：${bible.genre}`)
     if (bible.worldRules.length > 0) book.push('世界规则：\n' + bible.worldRules.map(r => `- ${r}`).join('\n'))
-    // 角色上下文：角色库（主表）与道藏角色卡合并去重，避免两份重复注入、互相打架。
+    // 角色上下文：角色库（主表）与提炼角色卡合并去重，避免两份重复注入、互相打架。
     const roleLib = project.roles ?? []
     const labelName = { protagonist: '主角', female_lead: '女主', female_support: '女配', support: '配角', antagonist: '反派', extra: '路人' }
     const seenRole = new Set<string>()
@@ -89,7 +89,7 @@ export function writeSystemPrompt(project: ProjectState, targetChars?: number, l
       }
     }
     if (mergedRoles.length > 0) {
-      book.push('角色卡（角色库与道藏已合并去重）：')
+      book.push('角色卡（角色库与提炼已合并去重）：')
       book.push(...mergedRoles)
     }
     if (bible.redLines.length > 0) book.push('写作红线（违反即失败）：\n' + bible.redLines.map(r => `- ${r}`).join('\n'))
@@ -106,7 +106,7 @@ export function writeSystemPrompt(project: ProjectState, targetChars?: number, l
   book.push('==================== 大纲结束 ====================')
   const assetsBlock = renderAllAssets(project.assets, project.styleProfile)
   if (assetsBlock !== '') book.push(assetsBlock)
-  // 作者自定义槽位（只影响表达方式，不覆盖道藏/红线/合规）。
+  // 作者自定义槽位（只影响表达方式，不覆盖提炼/红线/合规）。
   const slotBlock = renderPromptSlots(project)
   if (slotBlock !== '') book.push(slotBlock)
   // 已定名资产（取名器采纳的名字）：本书层，只随作者采纳变。
@@ -171,7 +171,7 @@ export function bodyContinuationSuffix(): string {
 
 /** 本域提示词登记（注册表消费）。 */
 export const entries: PromptEntry[] = [
-  { id: 'writing.chapter', description: '正文生成：三层组装（硬性要求/合规红线 → 道藏世界大纲资产 → 本章伏笔剧情线张力）' },
+  { id: 'writing.chapter', description: '正文生成：三层组装（硬性要求/合规红线 → 提炼世界大纲资产 → 本章伏笔剧情线张力）' },
   { id: 'writing.rewrite', description: '整章修订：正文生成提示 + 「只改需改处、字数与原章相当」' },
   { id: 'writing.continuation', description: '续写补齐附加要求：承接已有正文、不重写不总结、留章末钩子' },
 ]

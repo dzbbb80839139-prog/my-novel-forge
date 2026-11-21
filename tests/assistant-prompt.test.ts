@@ -50,7 +50,7 @@ describe('renderToolDocs（真正的动作裁剪）', () => {
     '- chapter_generate：重新生成该章。',
     '- chapter_review：对该章执行 AI 审稿。',
     '- export_txt：导出全本 TXT。',
-    '- bible_set_rule：修改道藏的世界规则。',
+    '- bible_set_rule：修改提炼的世界规则。',
   ]
 
   it('strict=false：作者点明了事情，说明书全量照给（作者有权指定任意动作）', () => {

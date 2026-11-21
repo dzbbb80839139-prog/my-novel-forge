@@ -119,7 +119,7 @@ describe('GET /status', () => {
   })
 
   it('返回宿主算出的阶段契约', async () => {
-    // 有项目、有足够长大纲、无道藏 → 立设定
+    // 有项目、有足够长大纲、无提炼 → 立设定
     saveProject(dir, createProject('第一章 少年入城'.repeat(20)))
     const { status, body } = await callStatus(makeDeps(), '')
     expect(status).toBe(200)

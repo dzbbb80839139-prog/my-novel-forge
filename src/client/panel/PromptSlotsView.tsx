@@ -1,7 +1,7 @@
 /**
  * 提示词槽位：给作者留几个**安全可改**的位置来微调本书表达偏好。
  *
- * 边界写在界面上：槽位只**追加偏好**，不能覆盖道藏、写作红线、九条内容合规红线、
+ * 边界写在界面上：槽位只**追加偏好**，不能覆盖提炼、写作红线、九条内容合规红线、
  * 反 AI 规则与阶段契约 —— 这些由宿主锁定。清空即恢复默认。
  */
 
@@ -53,18 +53,18 @@ export default function PromptSlotsView({ api }: PromptSlotsViewProps): JSX.Elem
     <div className={css.card} style={{ gap: 'var(--nf-space-12)' }}>
       <div className={`${css.row} ${css.rowBetween} ${css.rowBetweenWrap}`} style={{ gap: 'var(--nf-space-8)' }}>
         <span className={css.cardTitle}>提示词槽位（本书）</span>
-        <span className={css.meta}>只追加偏好，不覆盖道藏 / 红线 / 合规</span>
+        <span className={css.meta}>只追加偏好，不覆盖提炼 / 红线 / 合规</span>
       </div>
       <span className={css.meta}>
         这里的文字会追加到写作提示词末尾，用来微调表达方式。**规则类内容不可改**：
-        道藏、写作红线、内容合规红线、反 AI 规则、阶段契约由宿主锁定，槽位碰不到。
+        提炼、写作红线、内容合规红线、反 AI 规则、阶段契约由宿主锁定，槽位碰不到。
       </span>
 
       {notice !== '' && <NoticeBar kind="ok">{notice}</NoticeBar>}
       {error !== '' && (
         <NoticeBar
           kind="error"
-          detail="槽位写入失败时本次修改未生效，规则类内容（道藏 / 红线 / 合规）不受影响。重试会重新提交当前草稿。"
+          detail="槽位写入失败时本次修改未生效，规则类内容（提炼 / 红线 / 合规）不受影响。重试会重新提交当前草稿。"
           onRetry={() => { void refresh() }}
         >
           {error}

@@ -36,7 +36,7 @@ function chapter(no: number, status: ChapterStatus): ChapterPlan {
   return { no, volume: 1, title: `第${no}章`, beats: '', targetChars: 3000, status }
 }
 
-/** 有项目 + 有道的道藏（结构只需存在即可）。 */
+/** 有项目 + 有道的提炼（结构只需存在即可）。 */
 const BIBLE = { worldRules: [], characters: [], redLines: [], style: [] } as unknown as ProjectState['bible']
 
 describe('isGenericContinue', () => {
@@ -62,11 +62,11 @@ describe('computeBookStage', () => {
     expect(computeBookStage(makeProject({ outline: '太短' })).id).toBe('outline')
   })
 
-  it('有项目无道藏 → 立设定', () => {
+  it('有项目无提炼 → 立设定', () => {
     expect(computeBookStage(makeProject()).id).toBe('bible')
   })
 
-  it('有道藏无章节 → 排章节', () => {
+  it('有提炼无章节 → 排章节', () => {
     expect(computeBookStage(makeProject({ bible: BIBLE })).id).toBe('plan')
   })
 

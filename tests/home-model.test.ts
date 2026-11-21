@@ -66,7 +66,7 @@ describe('computeJourneyStages', () => {
     expect(computeJourneyStages(undefined, [], 0).every(s => !s.done)).toBe(true)
   })
 
-  it('有项目但没道藏：大纲完成、设定未完成', () => {
+  it('有项目但没提炼：大纲完成、设定未完成', () => {
     const stages = computeJourneyStages(project(), [], 0)
     expect(stages.find(s => s.id === 'outline')?.done).toBe(true)
     expect(stages.find(s => s.id === 'bible')?.done).toBe(false)

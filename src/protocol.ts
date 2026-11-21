@@ -97,7 +97,7 @@ export const NOVEL_API = {
   charactersRefresh: '/api/my-novel-forge/characters/refresh',
   /** 事实库回填：对历史已生成章节批量抽取事实（旧章节无事实记录时用）。 */
   factsBackfill: '/api/my-novel-forge/facts/backfill',
-  /** 道藏局部修补（如世界观规则编辑）。 */
+  /** 提炼局部修补（如世界观规则编辑）。 */
   biblePatch: '/api/my-novel-forge/bible/patch',
   /** 小说简介：生成（AI）/补全（AI）/保存。 */
   blurb: '/api/my-novel-forge/blurb',
@@ -165,6 +165,10 @@ export const NOVEL_API = {
   themeBackgroundUpload: '/api/my-novel-forge/theme/background',
   /** 主题自定义背景：读取已上传文件（GET prefix，/theme/background/<name>）。 */
   themeBackgroundGet: '/api/my-novel-forge/theme/background',
+  /** 文本蒸馏：从范文提炼写作风格/套路 DNA。 */
+  distillText: '/api/my-novel-forge/distill-text',
+  /** 文本洗稿：把段落改写去重、换种说法。 */
+  rewriteText: '/api/my-novel-forge/rewrite-text',
 } as const
 
 /** 书架：一本书的条目。 */
@@ -468,6 +472,11 @@ export interface BookAnalysisResult {
   structure: string[]
   lessons: string[]
   risks: string[]
+}
+
+/** POST /distill-text /rewrite-text 通用文本处理请求。 */
+export interface TextToolRequest {
+  text: string
 }
 
 /** POST /idea-inspiration request。 */
@@ -1133,7 +1142,7 @@ export interface RolesResponse {
   candidates?: RoleRecord[]
 }
 
-/** POST /bible/patch 请求：局部修补道藏。 */
+/** POST /bible/patch 请求：局部修补提炼。 */
 export interface BiblePatchRequest {
   worldRules?: string[]
   redLines?: string[]
@@ -1916,7 +1925,7 @@ export interface ChapterResponse {
 /**
  * 导出范围：
  * - `book`       整本正文（txt / md）
- * - `settings`   项目设定（总纲 / 道藏 / 大世界 / 写作资产 / 卷首语）
+ * - `settings`   项目设定（总纲 / 提炼 / 大世界 / 写作资产 / 卷首语）
  * - `plan`       规划（卷计划 + 章节计划，含每章目标/要点/钩子/硬事实）
  * - `characters` 角色（角色库 + 人物志当前状态）
  * - `review`     质检记录（逐章审稿 + 作者复盘 + 伏笔/剧情线状态）
@@ -2633,7 +2642,7 @@ export interface AdaptMaterializeResponse {
   bookName: string
   /** 改编后总纲。 */
   outline: string
-  /** 改编后道藏。 */
+  /** 改编后提炼。 */
   bible: StoryBible
   /** 改编后角色库。 */
   roles: RoleRecord[]
@@ -2655,7 +2664,7 @@ export interface AdaptMaterializeSaveRequest {
   outputDir?: string
   /** 改编后总纲。 */
   outline: string
-  /** 改编后道藏。 */
+  /** 改编后提炼。 */
   bible: StoryBible
   /** 改编后角色库。 */
   roles: RoleRecord[]

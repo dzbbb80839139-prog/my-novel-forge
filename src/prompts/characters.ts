@@ -6,7 +6,7 @@
 
 import type { PromptEntry } from './catalog.ts'
 
-/** AI 从全书提炼角色库：大纲 + 道藏 + 编年录 + 章节摘要 → 结构化角色清单。 */
+/** AI 从全书提炼角色库：大纲 + 提炼 + 编年录 + 章节摘要 → 结构化角色清单。 */
 export function extractRolesSystemPrompt(): string {
   return [
     '你是一位网文角色库管理员。请根据本书的大纲、设定、编年录与章节摘要，提炼完整的角色库。',

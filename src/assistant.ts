@@ -62,8 +62,8 @@ const WRITE_TOOL_KEYS: Record<string, RegExp> = {
   chapter_rewrite: /(重写|改写|修订|修改|改一下|调整|替换|润色|优化|修正|完善|回炉|换一种|从头)/,
   chapter_review: /(审|检查|校验|点评|评估|把关|质量|怎么样|如何)/,
   outline_replace: /(大纲|总纲|简介)/,
-  bible_set_rule: /(道藏|设定|规则|红线|世界|金手指)/,
-  bible_set_redline: /(道藏|设定|红线)/,
+  bible_set_rule: /(提炼|设定|规则|红线|世界|金手指)/,
+  bible_set_redline: /(提炼|设定|红线)/,
   foreshadow_add: /(暗线|伏笔|埋)/,
   foreshadow_update: /(暗线|伏笔)/,
   export_txt: /(导出|打包|下载|txt)/,
@@ -88,12 +88,12 @@ const READ_TOOLS: readonly string[] = [
  * 每行以 `- 工具名：` 开头，renderToolDocs 依赖这个约定识别工具归属。
  */
 const ASSISTANT_TOOL_DOCS: readonly string[] = [
-    '- book_overview：{"scope": "recent|full|volume:2"(可选，默认 recent)}。返回全书上下文包（总纲/道藏/大世界/章节要点/编年录/暗线/卷首语）。recent=最近30章；full=全部章节（书很长时慎用）；volume:N=只看第N卷。',
+    '- book_overview：{"scope": "recent|full|volume:2"(可选，默认 recent)}。返回全书上下文包（总纲/提炼/大世界/章节要点/编年录/暗线/卷首语）。recent=最近30章；full=全部章节（书很长时慎用）；volume:N=只看第N卷。',
     '- facts_query：{"keyword": "关键词"}。从编年录按关键词检索相关事实（如灵石、境界名、人物名）。',
     '- impact_analysis：{"change": "要做的修改描述"}。分析这次改动会波及哪些位置，返回影响清单（定位到章节/设定/编年录）。',
     '- outline_text：无参数。返回当前总纲全文。',
     '- outline_replace：{"old": "要替换的原文片段", "new": "新文本"}。在总纲中替换一段文字（old 必须能在总纲中找到）。',
-    '- bible_set_rule：{"index": 序号(0起), "text": "新规则文本"} 或 {"append": "追加的规则"}。修改道藏的世界规则。',
+    '- bible_set_rule：{"index": 序号(0起), "text": "新规则文本"} 或 {"append": "追加的规则"}。修改提炼的世界规则。',
     '- bible_set_redline：同上，修改写作红线。',
     '- chapter_text：{"no": 章节号}。返回该章正文。',
     '- chapter_rewrite：{"no": 章节号, "instructions": "修改要求", "target": "原文片段(可选，留空整章)"}。按讨论结果修订章节；给了 target 只改该自然段。',
@@ -230,7 +230,7 @@ function renderProjectSnapshot(project: ProjectState): string {
   if (assetNames.length > 0) sections.push(`【写作资产】${assetNames.join(' · ')}`)
   if (project.bible !== undefined) {
     const bible = project.bible
-    sections.push('【道藏】')
+    sections.push('【提炼】')
     if (bible.genre !== '') sections.push(`题材基调：${bible.genre}`)
     if (bible.worldRules.length > 0) sections.push('世界规则：\n' + bible.worldRules.map(r => `- ${r}`).join('\n'))
     if (bible.characters.length > 0) {
@@ -310,19 +310,19 @@ function assistantSystemPrompt(project: ProjectState, strictStage = false): stri
     '座右铭：「书是你的，但坑我替你盯着。」',
     '职责边界：陪作者讨论剧情/人设/世界观/爽点节奏并落地修改、维护全书一致性；不闲聊、不彩虹屁、不无意义长篇大论。',
     '==================== 模块正式名称（回复作者时一律使用，禁止使用括号里的旧称） ====================',
-    '总纲 = 总纲；道藏 = 道藏；暗线 = 暗线；卷首语 = 卷首语；编年录 = 编年录。',
+    '总纲 = 总纲；提炼 = 提炼；暗线 = 暗线；卷首语 = 卷首语；编年录 = 编年录。',
     '==================== 当前项目快照 ====================',
     renderProjectSnapshot(project),
     '==================== 快照结束 ====================',
     '',
     '工作规则（严格遵守）：',
-    '1. 全量知情：回答和修改必须基于项目真实数据，禁止编造书中不存在的设定。需要完整信息时，先调用 book_overview 获取全书上下文（总纲全文/道藏/大世界/编年录/全部章节要点/暗线/卷首语）；需要某章正文用 chapter_text。',
+    '1. 全量知情：回答和修改必须基于项目真实数据，禁止编造书中不存在的设定。需要完整信息时，先调用 book_overview 获取全书上下文（总纲全文/提炼/大世界/编年录/全部章节要点/暗线/卷首语）；需要某章正文用 chapter_text。',
     '2. 修改流程：改前用一句话说明意图 → 执行工具 → 改后简要汇报。',
-    '3. 连锁维护（只用于大改动，不要滥用）：改动**整段大纲/道藏规则/章节正文**这类可能冲突的大改动时，才主动调用 impact_analysis；**新增知识库文档、记待办、加剧情线、改暗线状态**这类轻量增改，做完直接一句话汇报即可，禁止再连锁调用其它工具。',
+    '3. 连锁维护（只用于大改动，不要滥用）：改动**整段大纲/提炼规则/章节正文**这类可能冲突的大改动时，才主动调用 impact_analysis；**新增知识库文档、记待办、加剧情线、改暗线状态**这类轻量增改，做完直接一句话汇报即可，禁止再连锁调用其它工具。',
     '4. 删除红线：删除章节、清空设定等破坏性操作必须等作者明确同意。',
     '5. 收敛执行（最重要）：每轮只做用户明确要求的那一件事。执行完立即用一句话汇报并结束本轮；**禁止**重复调用已做过的工具、**禁止**为了"保险/确认/顺便"再调用无关工具。若用户说"记住这个设定/记一条待办/加一条剧情线"，就调对应工具一次 → 汇报 → 停。',
     '6. 品质门槛：建议必须具体——指出问题在哪一章、哪一段、哪一句，并给出可落地的改法；禁止"建议增强冲突"这类空话。',
-    '7. 设定忠诚：忠于总纲、道藏、大世界、编年录；发现书中已有内容与设定冲突时，主动指出并给修正方案。',
+    '7. 设定忠诚：忠于总纲、提炼、大世界、编年录；发现书中已有内容与设定冲突时，主动指出并给修正方案。',
     '8. 中文回复，简洁有干货。',
     '',
     '可用工具：',
@@ -336,7 +336,7 @@ function assistantSystemPrompt(project: ProjectState, strictStage = false): stri
     '- 具体：回答必须引用项目里的真实内容（人名、境界、章节、暗线、设定），禁止空泛套话。快照里没有的信息，先调用工具获取（chapter_text / outline_text）再回答。',
     '- 专业：给建议时说明理由，指出问题所在章节/段落，给出可直接落地的修改方案（改什么、怎么改）。',
     '- 主动：作者说"改一下"，主动调用对应工具执行，不要只给建议不动手；执行前用一句话说明意图，执行后简短汇报结果。',
-    '- 忠于设定：以总纲、道藏、编年录为准，不得自相矛盾；发现问题（如剧情与设定冲突）主动指出。',
+    '- 忠于设定：以总纲、提炼、编年录为准，不得自相矛盾；发现问题（如剧情与设定冲突）主动指出。',
     '- 中文回复；文字量适中，别啰嗦。',
     '',
     '使用规则（非常重要）：',
@@ -357,7 +357,7 @@ function assistantSystemPrompt(project: ProjectState, strictStage = false): stri
     '- 状态诚实（重要）：只有工具返回成功结果时才能说"已修改/已生成/已保存/已导出"；工具报错时必须如实说明失败原因与当前真实状态，禁止声称操作已完成，也禁止把"草稿"说成"已定稿"。',
     '- 修改前先向作者说明你要改什么、为什么；动作执行后简要汇报结果。',
     '- 涉及删除类操作（删除章节、清空设定）必须等作者明确同意。',
-    '- 严格忠于道藏与总纲；不得自行发明与既有设定冲突的内容。',
+    '- 严格忠于提炼与总纲；不得自行发明与既有设定冲突的内容。',
     '- 用中文回复。',
     '',
     renderStageContract(stage),
@@ -433,7 +433,7 @@ export async function* executeAction(
       return `总纲已修改：替换了 ${old.length} 字符的片段。`
     }
     case 'bible_set_rule': {
-      if (project.bible === undefined) throw new NovelActionError('contract', '尚无道藏，请先提炼')
+      if (project.bible === undefined) throw new NovelActionError('contract', '尚无提炼结果，请先提炼')
       const index = num(args.index)
       if (index !== undefined) {
         project.bible.worldRules[index] = str(args.text)
@@ -447,7 +447,7 @@ export async function* executeAction(
       return `世界规则已更新（当前 ${project.bible.worldRules.length} 条）。`
     }
     case 'bible_set_redline': {
-      if (project.bible === undefined) throw new NovelActionError('contract', '尚无道藏，请先提炼')
+      if (project.bible === undefined) throw new NovelActionError('contract', '尚无提炼结果，请先提炼')
       const index = num(args.index)
       if (index !== undefined) {
         project.bible.redLines[index] = str(args.text)
@@ -1003,7 +1003,7 @@ export async function* runAssistantTurn(
       const intendsAction = /(改|修改|修订|重写|替换|调整|生成|新增|删除|导出|看看|查看|调出|读一下|加上|加一个|去掉|删掉|把.+改成|定位|处理|转轨|检查|确认|搜索|找一下|列一下|查一下|查一遍|查一查|再查|查查|核实|核对|清点|盘点|看一下|看下|继续)/.test(reply)
       // 兜底：回复提到任何可操作对象名词（即使动词是"看/查/说"的变体）也视为有操作意图，
       // 避免"先查一遍编年录"这类措辞漏网被静默当作纯聊天。
-      const mentionsTarget = /(编年录|道藏|暗线|总纲|卷首语|章节|正文|规则|红线|伏笔|简介|大纲|事实|设定|世界|角色|人物|第\s*\d+\s*章)/.test(reply)
+      const mentionsTarget = /(编年录|提炼|暗线|总纲|卷首语|章节|正文|规则|红线|伏笔|简介|大纲|事实|设定|世界|角色|人物|第\s*\d+\s*章)/.test(reply)
       const strayTag = /<[a-z_-]*action[^>]*>/.test(reply)
       // 只在「本轮还没执行过任何工具」时才逼它出标签；一旦已经执行过（round>0），
       // 后续的纯文字回复一律当作收尾，绝不 nudge，避免「已加入…设定」被误判成还想操作而反复执行。

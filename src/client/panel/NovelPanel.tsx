@@ -196,7 +196,7 @@ const SETTINGS_TAB: { id: NovelTab; label: string; icon: ReactElement } = { id: 
  *  在无 ligature 的字体里退化成豆腐块，且与顶栏已改用的 lucide 不是一套语言。 */
 const DRAWER_META: Record<string, { icon: ReactNode; label: string }> = {
   write: { icon: <BookMarked size={14} />, label: '写作 · 章节索引' },
-  setup: { icon: <BookOpen size={14} />, label: '设定 · 道藏' },
+  setup: { icon: <BookOpen size={14} />, label: '设定 · 提炼' },
   assets: { icon: <Folder size={14} />, label: '资产 · 创作素材库' },
   cabinet: { icon: <Library size={14} />, label: '资料侧柜 · 本书此刻' },
   params: { icon: <Settings size={14} />, label: '写作参数 · 设置' },
@@ -443,14 +443,14 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
   const changeArchiveTab = useCallback((next: 'facts' | 'reviews'): void => {
     setArchiveTab(next)
   }, [setArchiveTab])
-  /** 本书设定页：子页签（设定库 / 大世界 / 角色库 / 编年·复盘），localStorage 记忆。 */
-  const [bookTab, setBookTab] = usePersistentState<'bible' | 'world' | 'roles' | 'facts'>({
+  /** 本书设定页：子页签（设定库 / 大世界 / 角色库 / 编年·复盘 / 主线 / 角色卡），localStorage 记忆。 */
+  const [bookTab, setBookTab] = usePersistentState<'bible' | 'world' | 'roles' | 'facts' | 'mainline' | 'cards'>({
     key: 'my-novel-forge.book.tab',
-    parse: r => parseEnum(r, ['bible', 'world', 'roles', 'facts'] as const),
+    parse: r => parseEnum(r, ['bible', 'world', 'roles', 'facts', 'mainline', 'cards'] as const),
     serialize: v => v,
     fallback: 'bible',
   })
-  const changeBookTab = useCallback((next: 'bible' | 'world' | 'roles' | 'facts'): void => {
+  const changeBookTab = useCallback((next: 'bible' | 'world' | 'roles' | 'facts' | 'mainline' | 'cards'): void => {
     setBookTab(next)
   }, [setBookTab])
   /** 角色知情度编辑草稿（角色名 → 文本，每行一条）。 */
@@ -1006,7 +1006,7 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
       title: '用新总纲重置本书',
       body: '本书的全部进度会被清空，从新总纲重新开始。这一步不可恢复。',
       effects: [
-        '道藏 / 卷计划 / 章节计划',
+        '提炼 / 卷计划 / 章节计划',
         '已生成章节正文',
         '暗线 / 写作资产 / 编年录',
       ],
@@ -1769,7 +1769,7 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
       }), 'done')
     } catch (err) {
       setError((err as Error).message)
-      pushProgress(`提炼道藏失败：${(err as Error).message}`, 'error')
+      pushProgress(`提炼失败：${(err as Error).message}`, 'error')
     } finally {
       setBusy(false)
       setBusyLabel('')
@@ -2626,8 +2626,8 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
       label: '设定',
       icon: <BookOpen size={14} />,
       on: 'setup',
-      title: '道藏：角色、世界规则、事实与红线',
-      badge: bible === undefined ? '' : '道藏',
+      title: '提炼：角色、世界规则、事实与红线',
+      badge: bible === undefined ? '' : '提炼',
       go: () => { openDrawer('setup') },
     },
     {
@@ -2752,9 +2752,9 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
     if (bible === undefined) {
       return {
         eyebrow: '推荐下一步',
-        title: '提炼道藏',
+        title: '提炼',
         reason: '人设、世界观、金手指规则、写作红线是后续所有生成的地基，越完整质量越高。',
-        actionLabel: '生成道藏',
+        actionLabel: '生成提炼',
         onClick: () => { void handleBible() },
       }
     }
@@ -2831,7 +2831,7 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
   const cabinetItems = (): Array<{ key: string; group: 'book' | 'tools'; name: string; di: string; dim?: boolean; go: () => void }> => [
     // —— 本书资料（全部右滑抽屉承载，底座总编台不被切走）——
     { key: 'outline', group: 'book', name: '总纲 / 大纲', di: project !== null ? `● ${(project.outline?.length ?? 0).toLocaleString()} 字` : '○ 未导入', dim: project === null, go: () => { openDrawer('overview') } },
-    { key: 'bible', group: 'book', name: '道藏（设定 · 角色）', di: bible !== undefined ? `● ${bible.characters.length} 人 · ${bible.worldRules.length} 规则` : '○ 未提炼', dim: bible === undefined, go: () => { openDrawer('setup'); changeBookTab('bible') } },
+    { key: 'bible', group: 'book', name: '提炼（设定 · 角色）', di: bible !== undefined ? `● ${bible.characters.length} 人 · ${bible.worldRules.length} 规则` : '○ 未提炼', dim: bible === undefined, go: () => { openDrawer('setup'); changeBookTab('bible') } },
     { key: 'reviews', group: 'book', name: '作者复盘', di: (() => { const r = chapters.filter(c => c.authorReview !== undefined); const h = r.filter(c => c.authorReview!.hookHonored).length; return r.length === 0 ? '○ 暂无' : `● 钩子兑现 ${h}/${r.length}` })(), dim: !chapters.some(c => c.authorReview !== undefined), go: () => { openDrawer('setup'); changeBookTab('facts'); changeArchiveTab('reviews') } },
     { key: 'plotlines', group: 'book', name: '剧情线 · 伏笔', di: (() => { const all = project?.plotlines ?? []; const a = all.filter(l => l.status === 'active').length; const p = foreshadows.filter(f => f.status === 'planned').length; return all.length === 0 && foreshadows.length === 0 ? '○ 暂无' : `● ${a} 线推进 · ${p} 笔待埋` })(), dim: (project?.plotlines ?? []).length === 0 && foreshadows.length === 0, go: () => { openDrawer('plotlines') } },
     { key: 'blurb', group: 'book', name: '简介 / 封面', di: project !== null && project.blurb !== '' ? '● 已填写' : '○ 未填写', dim: project === null, go: () => { openDrawer('blurb') } },
@@ -3371,6 +3371,8 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
                   ['world', '', '大世界'],
                   ['roles', '', `角色库（${project?.roles?.length ?? 0}）`],
                   ['facts', '', '编年 / 复盘'],
+                  ['mainline', '', `主线（${(project?.plotlines ?? []).filter(l => l.kind === 'main').length}）`],
+                  ['cards', '', `角色卡（${bible?.characters.length ?? 0}）`],
                 ] as const).map(([id, icon, label]) => (
                   <button
                     key={id}
@@ -3590,6 +3592,66 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+            {bookTab === 'mainline' && (
+          <div className={css.card}>
+            <div className={`${css.row} ${css.rowBetween} ${css.rowBetweenWrap}`}>
+              <span className={`${css.cardTitle} ${css.cardTitleLg}`}> 主线</span>
+            </div>
+            <span className={css.meta}>只显示剧情线里的「主线」（kind=main），只读展示。要编辑主线请到「剧情线 · 伏笔」。</span>
+            {(() => {
+              const mains = (project?.plotlines ?? []).filter(l => l.kind === 'main')
+              if (mains.length === 0) return <div className={css.meta}>还没有主线。可到「剧情线 · 伏笔」新建一条主线。</div>
+              const statusLabel: Record<string, string> = { active: '推进中', paused: '暂停', resolved: '已完结', abandoned: '已废弃' }
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--nf-space-8)' }}>
+                  {mains.map(l => (
+                    <div key={l.id} className={css.card} style={{ gap: 6 }}>
+                      <div className={`${css.row} ${css.rowBetween} ${css.rowBetweenWrap}`}>
+                        <b style={{ fontSize: 14 }}> {l.name}</b>
+                        <span className={css.meta}>{statusLabel[l.status] ?? l.status}</span>
+                      </div>
+                      {l.goal !== '' && <div style={{ fontSize: 13 }}><b>目标：</b>{l.goal}</div>}
+                      {l.progress !== '' && <div style={{ fontSize: 13 }}><b>进度：</b>{l.progress}</div>}
+                      {l.nextGoal !== undefined && l.nextGoal !== '' && <div style={{ fontSize: 13 }}><b>下一目标：</b>{l.nextGoal}</div>}
+                      <div className={css.meta}>关联章节：{l.chapters.length === 0 ? '无' : l.chapters.map(n => `第${n}章`).join('、')}</div>
+                    </div>
+                  ))}
+                </div>
+              )
+            })()}
+          </div>
+        )}
+
+            {bookTab === 'cards' && (
+          <div className={css.card}>
+            <div className={`${css.row} ${css.rowBetween} ${css.rowBetweenWrap}`}>
+              <span className={`${css.cardTitle} ${css.cardTitleLg}`}> 角色卡（{bible?.characters.length ?? 0}）</span>
+            </div>
+            <span className={css.meta}>角色卡是「提炼」产出的设定角色（性格/目标/关系/知情度），与「角色库」是两份不同数据。</span>
+            {bible === undefined || bible.characters.length === 0
+              ? <div className={css.meta}>还没有角色卡。请先在「设定库」生成提炼。</div>
+              : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--nf-space-8)' }}>
+                  {bible.characters.map((c, i) => {
+                    const roleLabel: Record<string, string> = { protagonist: '主角', supporting: '配角', antagonist: '反派', other: '其他' }
+                    return (
+                      <div key={`${c.name}-${i}`} className={css.card} style={{ gap: 6 }}>
+                        <div className={`${css.row} ${css.rowBetween} ${css.rowBetweenWrap}`}>
+                          <b style={{ fontSize: 14 }}> {c.name}</b>
+                          <span className={css.meta}>{roleLabel[c.role] ?? c.role}</span>
+                        </div>
+                        {c.traits.length > 0 && <div style={{ fontSize: 13 }}><b>性格：</b>{c.traits.join('、')}</div>}
+                        {c.goals !== '' && <div style={{ fontSize: 13 }}><b>目标：</b>{c.goals}</div>}
+                        {c.relations !== '' && <div style={{ fontSize: 13 }}><b>关系：</b>{c.relations}</div>}
+                        {(c.knowledge ?? []).length > 0 && <div className={css.meta}>知情：{c.knowledge!.join('、')}</div>}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
           </div>
         )}
 
@@ -3970,7 +4032,7 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
                 <>
                   <div className={css.meta}>
                     大纲是本书的「出生证明」。更新时请二选一：<b>仅更新文本</b>（保留设定/章节/正文全部进度），或
-                    <b>重置项目</b>（从新总纲重新开始，清空道藏/卷/章节/正文/暗线/资产/编年录，不可恢复）。
+                    <b>重置项目</b>（从新总纲重新开始，清空提炼/卷/章节/正文/暗线/资产/编年录，不可恢复）。
                   </div>
                   <textarea
                     className={`${css.textarea} ${css.outlineEdit}`}
@@ -4430,7 +4492,7 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
             作者看到一块空白，分不清「在读」还是「崩了」。现在说清在等什么并给骨架。 */}
         {project === null && workspace === null && error === '' && viewMode === 'workspace' && (
           <div className={css.card}>
-            <SkeletonLines label="正在读取这本书的项目数据（大纲 / 道藏 / 章节计划）…" lines={5} />
+            <SkeletonLines label="正在读取这本书的项目数据（大纲 / 提炼 / 章节计划）…" lines={5} />
           </div>
         )}
 

@@ -55,7 +55,7 @@ export function computeBookStage(project: ProjectState | undefined): BookStage {
       label: '立设定',
       recommend: ['bible_set_rule', 'bible_set_redline'],
       allow: ['bible_set_rule', 'bible_set_redline'],
-      reason: '已有大纲，尚未提炼道藏',
+      reason: '已有大纲，尚未提炼设定',
     }
   }
   const chapters = project.chapters ?? []
@@ -66,7 +66,7 @@ export function computeBookStage(project: ProjectState | undefined): BookStage {
       recommend: [],
       // 章节规划不在助手的动作集里：通用「继续」不应被解释成改写总纲或设定。
       allow: [],
-      reason: '有道藏但还没有章节计划（规划在「我的小说工坊」面板或生产单里执行）',
+      reason: '有提炼但还没有章节计划（规划在「我的小说工坊」面板或生产单里执行）',
     }
   }
   const generating = chapters.filter(c => c.status === 'generating')

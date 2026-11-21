@@ -113,11 +113,11 @@ describe('分层口径抽查：固定层排在本书层之前', () => {
     const fixedAt = text.indexOf(COMPLIANCE_REDLINES[0]!)
     const bookAt = text.indexOf('本书专属红线甲')
     expect(fixedAt, '固定层缺失：合规红线没进提示词').toBeGreaterThanOrEqual(0)
-    expect(bookAt, '本书层缺失：道藏红线没进提示词').toBeGreaterThanOrEqual(0)
+    expect(bookAt, '本书层缺失：提炼红线没进提示词').toBeGreaterThanOrEqual(0)
     expect(fixedAt, '固定层必须排在本书层之前——前缀缓存命中的前提').toBeLessThan(bookAt)
   })
 
-  it('无道藏项目也能独立成立（不崩、固定层仍在）', () => {
+  it('无提炼项目也能独立成立（不崩、固定层仍在）', () => {
     const text = writeSystemPrompt(project())
     expect(text).toContain(COMPLIANCE_REDLINES[0]!)
     expect(text).toContain('==================== 内容合规红线')

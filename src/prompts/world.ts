@@ -32,16 +32,16 @@ export function renderWorld(world: WorldState | undefined): string {
   return sections.join('\n')
 }
 
-/** 大世界提炼：从大纲 + 道藏生成结构化境界体系/区域/势力。 */
+/** 大世界提炼：从大纲 + 提炼生成结构化境界体系/区域/势力。 */
 export function extractWorldSystemPrompt(): string {
   return [
-    '你是一位网文世界观架构师。请根据小说大纲与道藏，提炼结构化「大世界」数据。',
+    '你是一位网文世界观架构师。请根据小说大纲与提炼，提炼结构化「大世界」数据。',
     '输出必须是合法 JSON 对象：',
     '{"realms": [{"name": "境界名", "description": "突破条件/寿命/标志等"}], "regions": [{"name": "区域名", "description": "描述", "faction": "关联势力名或空"}], "factions": [{"name": "势力名", "kind": "宗门/家族/王朝/组织等", "description": "描述", "region": "驻地区域或空"}]}',
     '要求：',
     '1. realms 按由低到高顺序排列（修仙题材必须含完整境界链；无境界设定的题材可输出空数组）。',
     '2. 数量贴合大纲：realms 3-12 个，regions 2-10 个，factions 2-10 个。',
-    '3. 内容严格来自大纲与道藏，不要凭空发明与大纲冲突的设定。',
+    '3. 内容严格来自大纲与提炼，不要凭空发明与大纲冲突的设定。',
     '重要：所有字符串值内部不得包含换行符，JSON 必须在一段内完整结束。',
   ].join('\n')
 }
@@ -49,5 +49,5 @@ export function extractWorldSystemPrompt(): string {
 /** 本域提示词登记（注册表消费）。 */
 export const entries: PromptEntry[] = [
   { id: 'world.render', description: '大世界结构化设定渲染为写作提示词块（境界按序强约束）' },
-  { id: 'world.extract', description: '从大纲与道藏提炼结构化大世界（境界/区域/势力）' },
+  { id: 'world.extract', description: '从大纲与提炼提炼结构化大世界（境界/区域/势力）' },
 ]

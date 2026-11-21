@@ -1,7 +1,7 @@
 /**
  * 纯逻辑单测：提示词槽位（白名单 / 截断显式化 / 注入优先级声明）。
  *
- * 关键约束：槽位只追加"作者偏好"，不得覆盖道藏、红线、合规与反 AI 规则——
+ * 关键约束：槽位只追加"作者偏好"，不得覆盖提炼、红线、合规与反 AI 规则——
  * 这里用断言把这条边界固定下来。
  */
 import { describe, it, expect } from 'vitest'
@@ -78,7 +78,7 @@ describe('renderPromptSlots', () => {
     expect(text).toContain('【文风补充】多用短句')
     expect(text).toContain('【反 AI 补充】别用比喻')
     // 边界声明必须在（槽位不得覆盖规则类内容）
-    expect(text).toContain('与道藏、写作红线、内容合规红线冲突时，一律以后者为准')
+    expect(text).toContain('与提炼、写作红线、内容合规红线冲突时，一律以后者为准')
   })
 
   it('截断时在提示词里说明原长度', () => {

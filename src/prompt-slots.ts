@@ -2,7 +2,7 @@
  * 提示词槽位：给作者留几个**安全可改**的位置，用来微调本书的写作偏好。
  *
  * 设计边界（很重要）：
- *   * 槽位只追加"作者偏好"，**不允许覆盖**规则工程与合规红线——道藏、写作红线、
+ *   * 槽位只追加"作者偏好"，**不允许覆盖**规则工程与合规红线——提炼、写作红线、
  *     九条内容合规红线、反 AI 规则、阶段契约都由宿主锁定，槽位碰不到；
  *   * 槽位内容随项目保存（`novel-project.json`），换书即换槽位；
  *   * 每个槽位有长度上限，超长直接截断并标记（沿用「截断显式化」的规则）。
@@ -102,11 +102,11 @@ export function readPromptSlots(project: ProjectState): RenderedSlot[] {
 export function renderPromptSlots(project: ProjectState): string {
   const slots = readPromptSlots(project)
   if (slots.length === 0) return ''
-  const lines = ['==================== 作者偏好（本书自定义，优先级低于道藏/红线/合规） ====================']
+  const lines = ['==================== 作者偏好（本书自定义，优先级低于提炼/红线/合规） ====================']
   for (const slot of slots) {
     lines.push(`【${slot.label}】${slot.text}${slot.truncated ? `（已按 ${SLOT_BY_ID.get(slot.id)?.maxChars ?? 0} 字上限截断，原 ${slot.chars} 字）` : ''}`)
   }
-  lines.push('以上偏好只影响表达方式；与道藏、写作红线、内容合规红线冲突时，一律以后者为准。')
+  lines.push('以上偏好只影响表达方式；与提炼、写作红线、内容合规红线冲突时，一律以后者为准。')
   return lines.join('\n')
 }
 

@@ -17,7 +17,7 @@ export interface ChapterContext {
   bookRedLines: string[]
   /** 当前章相关角色卡（全量信息） */
   relevantRoles: Array<{ name: string; role: string; traits: string[]; goals?: string; knowledge?: string[] }>
-  /** 当前章相关道藏规则 */
+  /** 当前章相关提炼规则 */
   relevantWorldRules: string[]
   /** 活跃剧情线 */
   activePlotlines: Plotline[]
@@ -136,7 +136,7 @@ export function retrieveRelevantRoles(
     })
   }
 
-  // 角色库补充（不在道藏里的）
+  // 角色库补充（不在提炼里的）
   for (const r of roles ?? []) {
     if (seen.has(r.name)) continue
     if (!beatsText.includes(r.name) && r.roleLabel !== 'protagonist' && r.roleLabel !== 'antagonist') continue
@@ -196,7 +196,7 @@ export function buildChapterContext(
   // 角色：相关角色
   const relevantRoles = retrieveRelevantRoles(bible, project.roles, chapter.beats)
 
-  // 道藏规则：全部（规则数量通常不多，全量注入更安全）
+  // 提炼规则：全部（规则数量通常不多，全量注入更安全）
   const relevantWorldRules = bible?.worldRules ?? []
 
   // 活跃剧情线

@@ -80,8 +80,17 @@ export function CreateBookView({
   const handlePickOutlineFile = async (file: File | undefined): Promise<void> => {
     if (file === undefined) return
     try {
-      const buffer = await file.arrayBuffer()
-      const text = extractDocxTextFromBuffer(buffer)
+      const ext = file.name.toLowerCase().split('.').pop() ?? ''
+      let text: string
+      if (ext === 'docx') {
+        text = extractDocxTextFromBuffer(await file.arrayBuffer())
+      } else if (ext === 'md' || ext === 'txt') {
+        // md / txt 按 UTF-8 纯文本读取（带 BOM 时去掉 BOM）
+        text = new TextDecoder('utf-8').decode(await file.arrayBuffer()).replace(/^\uFEFF/, '')
+      } else {
+        setError('大纲仅支持 docx / md / txt 文件')
+        return
+      }
       if (text.length < 50) {
         setError('大纲内容过短（<50 字符），请检查文件')
         return
@@ -204,7 +213,7 @@ export function CreateBookView({
             className={`${css.dropzone} ${dragActive ? css.dropzoneActive : ''}`}
             role="button"
             tabIndex={0}
-            aria-label="选择或拖入 docx 大纲文件"
+            aria-label="选择或拖入 docx / md / txt 大纲文件"
             onClick={() => { outlineFileRef.current?.click() }}
             onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); outlineFileRef.current?.click() } }}
             onDragOver={e => { e.preventDefault(); setDragActive(true) }}
@@ -216,12 +225,12 @@ export function CreateBookView({
             }}
           >
             <span className={css.dropzoneIcon}></span>
-            <span>{outlineName !== '' ? `已选择：${outlineName}` : '点击选择 docx 大纲，或将文件拖到这里'}</span>
+            <span>{outlineName !== '' ? `已选择：${outlineName}` : '点击选择 docx / md / txt 大纲，或将文件拖到这里'}</span>
             <span className={css.meta}>推荐提供大纲：开书即建立项目，书名自动识别</span>
             <input
               ref={outlineFileRef}
               type="file"
-              accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept=".docx,.md,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/markdown,text/plain"
               style={{ display: 'none' }}
               onChange={e => {
                 void handlePickOutlineFile(e.target.files?.[0])

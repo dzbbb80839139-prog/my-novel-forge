@@ -1,5 +1,5 @@
 /**
- * 道藏域：从大纲提炼结构化设定（题材/世界规则/角色卡/红线/风格）。
+ * 提炼域：从大纲提炼结构化设定（题材/世界规则/角色卡/红线/风格）。
  *
  * 本文件同时是提示词注册表的域模块之一（见 catalog.ts）。
  */
@@ -9,7 +9,7 @@ import type { PromptEntry } from './catalog.ts'
 /** System prompt for story-bible extraction. */
 export function bibleSystemPrompt(): string {
   return [
-    '你是一位资深网文编辑兼设定架构师。你会收到一份小说大纲，请把它提炼成结构化的「道藏」，供后续写作时严格引用。',
+    '你是一位资深网文编辑兼设定架构师。你会收到一份小说大纲，请把它提炼成结构化的「提炼」，供后续写作时严格引用。',
     '要求：',
     '1. 忠于大纲，不自行发明大纲之外的设定。',
     '2. 角色卡覆盖大纲明确出现的角色（主角必含），每个角色给出性格标签、目标、关键关系。',
@@ -27,5 +27,5 @@ export function bibleSystemPrompt(): string {
 
 /** 本域提示词登记（注册表消费）。 */
 export const entries: PromptEntry[] = [
-  { id: 'bible.extract', description: '从大纲提炼道藏（题材/世界规则/角色卡/红线/风格）' },
+  { id: 'bible.extract', description: '从大纲提炼设定（题材/世界规则/角色卡/红线/风格）' },
 ]

@@ -326,6 +326,16 @@ export class NovelApi {
     return postJson<{ result: import('../protocol.ts').BookAnalysisResult }>(NOVEL_API.bookAnalysis, { text })
   }
 
+  /** 文本蒸馏：从范文提炼写作风格/套路。 */
+  async distillText(text: string): Promise<{ result: string }> {
+    return postJson<{ result: string }>(NOVEL_API.distillText, { text })
+  }
+
+  /** 文本洗稿：改写去重、换种说法。 */
+  async rewriteText(text: string): Promise<{ result: string }> {
+    return postJson<{ result: string }>(NOVEL_API.rewriteText, { text })
+  }
+
   /** 创意灵感。 */
   async ideaInspiration(idea: string, count = 5): Promise<{ result: import('../protocol.ts').IdeaInspirationResult }> {
     return postJson<{ result: import('../protocol.ts').IdeaInspirationResult }>(NOVEL_API.ideaInspiration, { idea, count })
@@ -382,7 +392,7 @@ export class NovelApi {
     return postJson<{ ok: boolean; filled: number }>(NOVEL_API.factsBackfill, {})
   }
 
-  /** 道藏局部修补。 */
+  /** 提炼局部修补。 */
   async biblePatch(patch: import('../protocol.ts').BiblePatchRequest): Promise<{ bible: import('../protocol.ts').StoryBible }> {
     return postJson<{ bible: import('../protocol.ts').StoryBible }>(NOVEL_API.biblePatch, patch)
   }

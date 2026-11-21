@@ -1,8 +1,8 @@
 /**
- * 审稿域：章节审稿（九维）、修订验证、作者复盘、验证模式道藏注入。
+ * 审稿域：章节审稿（九维）、修订验证、作者复盘、验证模式提炼注入。
  *
  * 审稿是逐章连打的动作，固定层（审稿口径 + 合规红线）排最前、本书层
- * （道藏/资产）排后面——前缀稳定才有机会命中厂商输入缓存（见 prompt-cache.ts）。
+ * （提炼/资产）排后面——前缀稳定才有机会命中厂商输入缓存（见 prompt-cache.ts）。
  *
  * 本文件同时是提示词注册表的域模块之一（见 catalog.ts）。
  */
@@ -16,14 +16,14 @@ import type { PromptEntry } from './catalog.ts'
 /** The review system prompt. */
 export function reviewSystemPrompt(project: ProjectState): string {
   const bible = project.bible
-  // 分层组装（见 prompt-cache.ts）：审稿口径与合规红线永不变，排最前；道藏与资产
+  // 分层组装（见 prompt-cache.ts）：审稿口径与合规红线永不变，排最前；提炼与资产
   // 只随作者编辑变，排后面——审稿是逐章连打的动作，前缀稳定才有机会命中输入缓存。
   const blocks: PromptBlock[] = []
   const fixed: string[] = [
-    '你是一位严格的网文审稿编辑。你会收到一章正文以及本书的道藏与红线。',
+    '你是一位严格的网文审稿编辑。你会收到一章正文以及本书的提炼与红线。',
     '请从以下维度审查本章：',
     '1. 人设一致性：角色行为是否符合下方角色卡的设定（性格/目标/知情度/说话方式）。',
-    '2. 设定一致性：金手指规则、战力体系、世界观是否与道藏冲突。',
+    '2. 设定一致性：金手指规则、战力体系、世界观是否与提炼冲突。',
     '3. 红线检查：是否触犯下方「本书红线」与「内容合规红线」。',
     '4. 文笔质量：语病、翻译腔、AI 套话（"不禁""仿佛""一时间"等高频词滥用）、流水账。',
     '5. 节奏与爽点：本章是否有推进、有钩子，是否拖沓灌水。',
@@ -48,7 +48,7 @@ export function reviewSystemPrompt(project: ProjectState): string {
   const assetsBlock = renderAllAssets(project.assets, project.styleProfile)
   if (assetsBlock !== '') book.push('\n' + assetsBlock)
   if (bible !== undefined) {
-    book.push('\n==================== 道藏 ====================')
+    book.push('\n==================== 提炼 ====================')
     if (bible.worldRules.length > 0) book.push('世界规则：\n' + bible.worldRules.map(r => `- ${r}`).join('\n'))
     if (bible.characters.length > 0) {
       book.push('角色卡：')
@@ -88,7 +88,7 @@ export function verifySystemPrompt(project: ProjectState): string {
 }
 
 /**
- * 验证模式下注入道藏。
+ * 验证模式下注入提炼。
  *
  * 原实现是 `JSON.stringify(project.bible).slice(0, 3000)`——有两个问题：
  * 1. **腰斩的 JSON 不是 JSON**：`slice` 从中间切断，审稿员会看到语法残缺的
@@ -100,7 +100,7 @@ export function verifySystemPrompt(project: ProjectState): string {
  */
 export function renderBibleForVerify(project: ProjectState): string {
   const bible = project.bible
-  if (bible === undefined) return '本书道藏（核对设定冲突用）：\n（无）'
+  if (bible === undefined) return '本书提炼（核对设定冲突用）：\n（无）'
   const parts: string[] = []
   if (bible.worldRules.length > 0) parts.push(`世界规则：\n${bible.worldRules.map(r => `- ${r}`).join('\n')}`)
   if (bible.characters.length > 0) {
@@ -111,14 +111,14 @@ export function renderBibleForVerify(project: ProjectState): string {
     }).join('\n')}`)
   }
   if (bible.redLines.length > 0) parts.push(`红线：\n${bible.redLines.map(r => `- ${r}`).join('\n')}`)
-  if (parts.length === 0) return '本书道藏（核对设定冲突用）：\n（无）'
-  // 总预算兜底：道藏极端庞大时仍要防止撑爆上下文，但截断显式化而非静默腰斩。
+  if (parts.length === 0) return '本书提炼（核对设定冲突用）：\n（无）'
+  // 总预算兜底：提炼极端庞大时仍要防止撑爆上下文，但截断显式化而非静默腰斩。
   const block = parts.join('\n')
   const limit = 6000
   const body = block.length > limit
-    ? block.slice(0, limit) + `\n…（道藏过长已节选，但角色名/世界规则已尽量保留；如需完整设定请查总纲页）`
+    ? block.slice(0, limit) + `\n…（提炼过长已节选，但角色名/世界规则已尽量保留；如需完整设定请查总纲页）`
     : block
-  return `本书道藏（核对设定冲突用）：\n${body}`
+  return `本书提炼（核对设定冲突用）：\n${body}`
 }
 
 /** Build the author-review system prompt (narrative structure, not prose). */
@@ -148,6 +148,6 @@ export function authorReviewSystemPrompt(): string {
 export const entries: PromptEntry[] = [
   { id: 'review.chapter', description: '章节审稿：九维（人设/设定/红线/文笔/节奏/逻辑/反AI/呈现/合规）' },
   { id: 'review.verify', description: '修订验证：逐条核对原意见是否解决，只挑新增 high' },
-  { id: 'review.bible-for-verify', description: '验证模式道藏注入：结构化渲染 + 显式截断' },
+  { id: 'review.bible-for-verify', description: '验证模式提炼注入：结构化渲染 + 显式截断' },
   { id: 'review.author', description: '作者复盘：钩子兑现/结尾强度/推进/连续性/趋势' },
 ]

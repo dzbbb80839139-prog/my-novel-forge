@@ -1,7 +1,7 @@
 /**
  * 一致性质检域：全书分批质检、改动影响分析。
  *
- * 两者都是「拿道藏 + 事实库 + 正文节选找矛盾」的同族任务，差别在触发方式：
+ * 两者都是「拿提炼 + 事实库 + 正文节选找矛盾」的同族任务，差别在触发方式：
  * 质检是定期全本扫，影响分析是作者改一处后主动扫波及面。
  *
  * 本文件同时是提示词注册表的域模块之一（见 catalog.ts）。
@@ -12,7 +12,7 @@ import type { PromptEntry } from './catalog.ts'
 /** 单批质检：设定 + 事实库 + 该批章节节选 → 矛盾清单。 */
 export function auditBatchSystemPrompt(): string {
   return [
-    '你是一位严谨的网文连续性审校编辑。你会收到一本小说的道藏、事实库和一批章节正文节选。',
+    '你是一位严谨的网文连续性审校编辑。你会收到一本小说的提炼、事实库和一批章节正文节选。',
     '请找出这批章节中的一致性矛盾，例如：',
     '- 人物状态冲突：境界/修为/伤势/资源在同一章内或跨章前后矛盾。',
     '- 设定违背：正文与世界观规则、金手指规则、写作红线冲突。',
@@ -30,7 +30,7 @@ export function auditBatchSystemPrompt(): string {
 export function impactAnalysisSystemPrompt(): string {
   return [
     '你是一位网文一致性审校。作者要做一处修改，请找出这次改动会波及的所有位置（设定、大纲、已写章节正文、事实库、简介中可能因此过时或矛盾的内容）。',
-    '输出必须是合法 JSON 数组，格式：[{"location": "位置（第N章/大纲/道藏-世界规则/大世界-境界/事实库/简介）", "quote": "原文片段（20-60字）", "suggestion": "修改建议", "kind": "must|optional|note"}]',
+    '输出必须是合法 JSON 数组，格式：[{"location": "位置（第N章/大纲/提炼-世界规则/大世界-境界/事实库/简介）", "quote": "原文片段（20-60字）", "suggestion": "修改建议", "kind": "must|optional|note"}]',
     'kind 含义：must=必须同步改否则矛盾；optional=建议改（影响观感）；note=备注（如旧称保留为古称、或无需改但需知晓）。',
     '重要：所有字符串值内部不得包含换行符，JSON 必须在一段内完整结束。',
   ].join('\n')
@@ -38,6 +38,6 @@ export function impactAnalysisSystemPrompt(): string {
 
 /** 本域提示词登记（注册表消费）。 */
 export const entries: PromptEntry[] = [
-  { id: 'audit.batch', description: '全书分批质检：道藏 + 事实库 + 正文节选 → 矛盾清单' },
+  { id: 'audit.batch', description: '全书分批质检：提炼 + 事实库 + 正文节选 → 矛盾清单' },
   { id: 'audit.impact', description: '影响分析：一处改动 → 全书需同步维护的位置清单' },
 ]
