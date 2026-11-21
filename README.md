@@ -23,6 +23,8 @@
 
 > **安装方式**：本插件是本地派生版，包名 `@local/my-novel-forge`，**未发布到 npm**。用 `file:` 协议指向本地目录安装，见下方「安装」一节。
 >
+> **代码来源**：本仓库派生自 [dsh-novel-forge](https://github.com/watersxya/dsh-novel-forge)，上游作者 watersxya，许可证 AGPL-3.0-only（与本仓库一致）。上游版权声明与许可条款继续适用于其原始代码；改编与新增部分以 git 提交历史为准，上游作者不对本仓库的修改负责。署名明细见 `NOTICE`，来源审计见 `PROVENANCE.md`。
+>
 > **界面语言**：面板为**简体中文单语**（无语言切换）。本文档的中英对照是文档翻译，不代表界面提供英文。
 
 ---
@@ -366,6 +368,8 @@ An AI novel-writing plugin for DeepSeek Harness (DSH). Feed it an outline (docx 
 **Version `2.5.1` · Scope: pure-text novel writing.** Everything happens inside the "Novel Forge" sidebar panel; no comic / storyboard / image / video generation.
 
 **UI language: Simplified Chinese only.** The panel ships a single Chinese UI (no language switch); the English section below is documentation for this repository, not an in-app language option.
+
+**Provenance.** This repository is a fork of [dsh-novel-forge](https://github.com/watersxya/dsh-novel-forge) by watersxya, released under AGPL-3.0-only (same as this repository). The upstream copyright notice and license terms continue to apply to its original code; adaptations and additions are recorded in the git history. The upstream author is not responsible for changes made here. See `NOTICE` for attributions and `PROVENANCE.md` for the source audit.
 
 ### Main pipeline
 

@@ -12,6 +12,26 @@
 审计对象：[ExplosiveCoderflome/AI-Novel-Writing-Assistant](https://github.com/ExplosiveCoderflome/AI-Novel-Writing-Assistant)（`Biz Novel Studio`，许可 **AGPL-3.0-only**）。
 本项目许可：**AGPL-3.0-only**（见 `LICENSE`，2026-10-17 由 Apache-2.0 切换，决策记录见文末「许可证变更决策」一节）。
 
+## 零、派生关系（2026-11-21 起）
+
+本仓库**派生自** [watersxya/dsh-novel-forge](https://github.com/watersxya/dsh-novel-forge)（作者 watersxya，许可 **AGPL-3.0-only**）。
+
+这一条必须先说清楚，因为它改变了本文其余部分的前提：
+
+- 下文的"借鉴审计"记录的是**上游原作者**对 `ExplosiveCoderflome/AI-Novel-Writing-Assistant` 的借鉴边界，不是本仓库新做的取证；
+- 本仓库与上游同为 AGPL-3.0-only，**整仓派生是许可允许的**；相应义务是保留上游署名并标注修改，已在 `NOTICE`（零、代码来源）与 `README`（代码来源 / Provenance）中声明；
+- 本仓库在上游之后新增与修改的内容以 git 提交历史为准（2026-11-21 起），与上游及更早项目无涉。
+
+三方关系：
+
+```
+ExplosiveCoderflome/AI-Novel-Writing-Assistant   AGPL-3.0-only
+        ↓ 结构参考（上游原作者的审计，见下文各节）
+watersxya/dsh-novel-forge                        AGPL-3.0-only
+        ↓ 整仓派生 + 修改（本仓库）
+dzbbb80839139-prog/my-novel-forge                AGPL-3.0-only
+```
+
 ## 结论
 
 **存在且仅存在过一处"贴合对方 API 形状"的写法，已重写；其余为独立实现。**
