@@ -1,7 +1,7 @@
 /**
  * 模型管理（DSH 风格）：两块分区——
  * ① 模型（提供方管理）：提供方卡片（编辑/删除）+ 添加提供方 / 添加自定义提供方；
- * ② 当前写作模型：提供商/模型下拉 + 测试连通 + 推理强度。
+ * ② 当前写作模型：提供商/模型下拉 + 测试连通。
  */
 import { useCallback, useEffect, useState } from 'react'
 import { PlugZap, Plus, RefreshCw, X } from 'lucide-react'

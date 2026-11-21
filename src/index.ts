@@ -67,10 +67,6 @@ export interface Config {
   fallbackMaxTokens?: number
   /** 出章后自动抽取故事时间线（默认开）。 */
   autoTimeline?: boolean
-  /** LLM reasoning effort (off/low/high/max). */
-  reasoningEffort?: 'off' | 'low' | 'high' | 'max'
-  /** 分析类任务（提炼/拆书/反推大纲等）的推理档位；默认 low。 */
-  analysisReasoning?: 'off' | 'low' | 'high' | 'max'
   /** Target characters per chapter. */
   chapterChars?: number
   /** Max output tokens per chapter call. */
@@ -142,8 +138,6 @@ export const Config: z<Config> = z.object({
   fallbackModel: live(z.string().default('')),
   fallbackMaxTokens: live(z.number().default(0)),
   autoTimeline: live(z.boolean().default(true)),
-  reasoningEffort: live(z.union(['off', 'low', 'high', 'max']).default('off')),
-  analysisReasoning: live(z.union(['off', 'low', 'high', 'max']).default('low')),
   chapterChars: live(z.number().default(2700)),
   maxTokens: live(z.number().default(12000)),
   reviewPassScore: live(z.number().default(70)),
@@ -168,8 +162,6 @@ const DEFAULT_OUTLINE_PATH = ''
 const DEFAULT_OUTPUT_DIR = dshHomePath('my-novels')
 const DEFAULT_PROVIDER = 'deepseek-official'
 const DEFAULT_MODEL = 'deepseek-flash'
-const DEFAULT_REASONING_EFFORT = 'off' as const
-const DEFAULT_ANALYSIS_REASONING = 'low' as const
 const DEFAULT_FALLBACK_MODEL = ''
 const DEFAULT_AUTO_TIMELINE = true
 const DEFAULT_CHAPTER_CHARS = 2700
@@ -198,8 +190,6 @@ export function resolveConfig(value: Partial<Config> | undefined): NovelConfig {
     fallbackModel: value?.fallbackModel ?? DEFAULT_FALLBACK_MODEL,
     fallbackMaxTokens: value?.fallbackMaxTokens,
     autoTimeline: value?.autoTimeline ?? DEFAULT_AUTO_TIMELINE,
-    reasoningEffort: value?.reasoningEffort ?? DEFAULT_REASONING_EFFORT,
-    analysisReasoning: value?.analysisReasoning ?? DEFAULT_ANALYSIS_REASONING,
     chapterChars: value?.chapterChars ?? DEFAULT_CHAPTER_CHARS,
     maxTokens: value?.maxTokens ?? DEFAULT_MAX_TOKENS,
     reviewPassScore: value?.reviewPassScore ?? DEFAULT_REVIEW_PASS_SCORE,
@@ -238,8 +228,6 @@ export function apply(ctx: Context, config?: Config): void {
     if (bs === undefined) return book
     if (bs.provider !== undefined) book.provider = bs.provider
     if (bs.model !== undefined) book.model = bs.model
-    if (bs.reasoningEffort !== undefined) book.reasoningEffort = bs.reasoningEffort
-    if (bs.analysisReasoning !== undefined) book.analysisReasoning = bs.analysisReasoning
     if (bs.chapterChars !== undefined) book.chapterChars = bs.chapterChars
     if (bs.maxTokens !== undefined) book.maxTokens = bs.maxTokens
     if (bs.reviewPassScore !== undefined) book.reviewPassScore = bs.reviewPassScore
@@ -279,8 +267,6 @@ export function apply(ctx: Context, config?: Config): void {
     if (patch.fallbackModel !== undefined) next.fallbackModel = patch.fallbackModel
     if (patch.fallbackMaxTokens !== undefined) next.fallbackMaxTokens = patch.fallbackMaxTokens
     if (patch.autoTimeline !== undefined) next.autoTimeline = patch.autoTimeline
-    if (patch.reasoningEffort !== undefined) next.reasoningEffort = patch.reasoningEffort
-    if (patch.analysisReasoning !== undefined) next.analysisReasoning = patch.analysisReasoning
     if (patch.chapterChars !== undefined) next.chapterChars = patch.chapterChars
     if (patch.maxTokens !== undefined) next.maxTokens = patch.maxTokens
     if (patch.reviewPassScore !== undefined) next.reviewPassScore = patch.reviewPassScore

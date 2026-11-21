@@ -399,7 +399,6 @@ interface CompleteOptions {
   user: string
   temperature?: number
   maxTokens?: number
-  reasoning?: 'off' | 'low' | 'high' | 'max'
   model?: string
   liveLabel?: string
   /**
@@ -446,8 +445,9 @@ async function complete(
     // 用户偏好先成型，再经能力层按**实际模型**收敛：同一模型走不同 provider/中转
     // 时约束不变，换备用模型后约束随新模型重算。
     // 思考档位一律不显式下发：不同模型/中转对 reasoning_effort 的支持参差不齐
-    // （推理模型可能不接受 off，普通模型可能不接受任何档位），省略该参数、由服务端
-    // 用模型自身默认值，才能让任何能连通的模型都可用。设置里的两个思考档位因此不再生效。
+    // （推理模型可能不接受 off，普通模型可能不接受任何档位），省略该参数，交给
+    // 模型适配层的默认值（DSH 的 defaultEffort）或厂商自身默认——这样任何能连通的
+    // 模型都可用。工坊不再提供自己的思考档位设置，避免与宿主设置重复且无效。
     const converged = convergeRequestParams(
       {
         temperature: options.temperature ?? 0.7,
@@ -701,7 +701,6 @@ export async function extractBible(ctx: Context, config: NovelConfig, outline: s
     user,
     temperature: 0.4,
     maxTokens: Math.max(config.maxTokens, 8000),
-    reasoning: config.analysisReasoning ?? 'low',
   })
   const raw = parseJsonObject<{
     genre?: unknown
@@ -1150,7 +1149,7 @@ export async function reviewChapter(
     '==================== 章节正文 ====================',
     bodyText,
   ].filter(line => line !== '').join('\n')
-  const text = await complete(ctx, config, { system: reviewSystemPrompt(project), user, temperature: 0.3, maxTokens: Math.max(config.maxTokens, 8000), reasoning: config.analysisReasoning ?? 'low', model: config.reviewModel, liveLabel: '审稿' })
+  const text = await complete(ctx, config, { system: reviewSystemPrompt(project), user, temperature: 0.3, maxTokens: Math.max(config.maxTokens, 8000), model: config.reviewModel, liveLabel: '审稿' })
   const raw = parseJsonObject<{ score?: unknown; riskScore?: unknown; tension?: unknown; verdict?: unknown; issues?: unknown; resolvedIds?: unknown; unresolvedIds?: unknown }>(text)
   const issues = Array.isArray(raw.issues)
     ? raw.issues
@@ -1242,7 +1241,6 @@ export async function reviewChapterText(
       user,
       temperature: 0.3,
       maxTokens: Math.max(config.maxTokens, 8000),
-      reasoning: config.analysisReasoning ?? 'low',
       model: config.reviewModel,
       liveLabel: previousReport !== undefined ? '修订验证审稿' : '审稿',
     }),
@@ -1407,7 +1405,7 @@ export async function suggestPlotlines(ctx: Context, config: NovelConfig, projec
       : '',
     '只输出 JSON 数组。',
   ].join('\n\n')
-  const text = await complete(ctx, config, { system, user, temperature: 0.6, maxTokens: Math.max(config.maxTokens, 4000), reasoning: config.analysisReasoning ?? 'low' })
+  const text = await complete(ctx, config, { system, user, temperature: 0.6, maxTokens: Math.max(config.maxTokens, 4000) })
   const raw = parseJsonArray<Record<string, unknown>>(text)
   const lines: Plotline[] = []
   const kinds = new Set(['main', 'branch', 'character', 'mystery'])
@@ -1510,7 +1508,7 @@ export async function refreshLinesFor(
       ].join('\n\n')
 
   const raw = parseJsonObject<{ progress?: unknown; items?: unknown }>(
-    await complete(ctx, config, { system, user, temperature: 0.3, maxTokens: lines.length === 1 ? Math.max(config.maxTokens, 2000) : Math.max(config.maxTokens, 2000 * lines.length), reasoning: config.analysisReasoning ?? 'low' }),
+    await complete(ctx, config, { system, user, temperature: 0.3, maxTokens: lines.length === 1 ? Math.max(config.maxTokens, 2000) : Math.max(config.maxTokens, 2000 * lines.length) }),
   )
   if (lines.length === 1) {
     const l = lines[0]!
@@ -1592,7 +1590,7 @@ export async function extractRoles(
     '只输出 JSON 数组。',
   ].join('\n\n')
   // 角色阵容：一次要产出 8-20 个角色，预算按预期角色数推算。
-  let text = await complete(ctx, config, { system, user, temperature: 0.3, maxTokens: resolveOutputBudget('character-cast', { characters: 20 }), structured: true, reasoning: config.analysisReasoning ?? 'low' })
+  let text = await complete(ctx, config, { system, user, temperature: 0.3, maxTokens: resolveOutputBudget('character-cast', { characters: 20 }), structured: true })
   let raw = parseJsonArray<Record<string, unknown>>(text)
   const hasProtagonist = raw.some(e => typeof e === 'object' && e !== null && e.roleLabel === 'protagonist')
   const tooFew = raw.length > 0 && raw.length < 6
@@ -1603,7 +1601,7 @@ export async function extractRoles(
       : tooFew
         ? '\n上一次输出角色过少（不足 6 个）。这是一部完整故事，请重新核对正文摘录：主角、主要反派、重要配角与所有有名有姓的角色都要收录（宁多勿漏），输出 8-20 个。'
         : '\n上一次输出中缺少主角（roleLabel 为 protagonist 的角色）。请重新输出完整 JSON 数组，务必包含正文中的主角。'
-    text = await complete(ctx, config, { system: system + hint, user, temperature: 0.3, maxTokens: resolveOutputBudget('character-cast', { characters: 24 }), structured: true, reasoning: config.analysisReasoning ?? 'low' })
+    text = await complete(ctx, config, { system: system + hint, user, temperature: 0.3, maxTokens: resolveOutputBudget('character-cast', { characters: 24 }), structured: true })
     raw = parseJsonArray<Record<string, unknown>>(text)
   }
   const labels = new Set(['protagonist', 'female_lead', 'female_support', 'support', 'antagonist', 'extra'])
@@ -1633,7 +1631,7 @@ export async function extractRoles(
     const names = roles.map(r => r.name).join('、')
     const patchSystem = system + roleCatchUpSuffix(names)
     try {
-      const patchText = await complete(ctx, config, { system: patchSystem, user, temperature: 0.3, maxTokens: Math.max(config.maxTokens, 12000), reasoning: config.analysisReasoning ?? 'low' })
+      const patchText = await complete(ctx, config, { system: patchSystem, user, temperature: 0.3, maxTokens: Math.max(config.maxTokens, 12000) })
       const patchRaw = parseJsonArray<Record<string, unknown>>(patchText)
       const existing = new Set(roles.map(r => r.name))
       for (const entry of patchRaw) {
@@ -1827,7 +1825,7 @@ export async function suggestOutlines(
     `请生成 ${n} 个大纲方案。`,
     '只输出 JSON 数组。',
   ].join('\n\n')
-  const text = await complete(ctx, config, { system, user, temperature: 0.85, maxTokens: Math.max(config.maxTokens, 12000), reasoning: config.analysisReasoning ?? 'low' })
+  const text = await complete(ctx, config, { system, user, temperature: 0.85, maxTokens: Math.max(config.maxTokens, 12000) })
   const parsed = parseJsonArray<Record<string, unknown>>(text)
   const candidates: OutlineCandidate[] = []
   for (const entry of parsed) {
@@ -1896,7 +1894,7 @@ export async function breakdownBook(
   for (const ch of chunks) {
     const noteUser = [`第${ch.no}章《${ch.title}》`, '正文：', ch.body.slice(0, 3000)].join('\n')
     try {
-      const text = await complete(ctx, config, { system: noteSystem, user: noteUser, temperature: 0.2, maxTokens: Math.max(config.maxTokens, 3000), reasoning: config.analysisReasoning ?? 'low' })
+      const text = await complete(ctx, config, { system: noteSystem, user: noteUser, temperature: 0.2, maxTokens: Math.max(config.maxTokens, 3000) })
       const raw = parseJsonObject<Record<string, unknown>>(text)
       const pick = (k: string): string[] => Array.isArray(raw[k]) ? raw[k].filter((x): x is string => typeof x === 'string' && x.trim() !== '').map(x => x.trim().slice(0, 120)).slice(0, 4) : []
       notes.push(
@@ -1928,7 +1926,6 @@ export async function breakdownBook(
         user: `分析范围：${selected.length} 章（${scope === 'all' ? '全书' : scope === 'recent' ? '最近 20 章' : '指定卷'}）。\n\n章节笔记：\n${notesText}`,
         temperature: 0.3,
         maxTokens: Math.max(config.maxTokens, 6000),
-        reasoning: config.analysisReasoning ?? 'low',
       })
       const raw = parseJsonObject<{ markdown?: unknown; structured?: unknown }>(text)
       sections.push({
@@ -2680,7 +2677,7 @@ export async function reverseOutlineFromChapters(
       return '第' + c.no + '章《' + (c.title || '无题') + '》\n' + stripChapterHeadings(body).slice(0, 1000)
     }).join('\n\n---\n\n')
     const system = reverseOutlineBatchSystemPrompt()
-    const note = await complete(ctx, config, { system, user: bodies, temperature: 0.2, maxTokens: Math.max(config.maxTokens, 3000), reasoning: config.analysisReasoning ?? 'low' , signal })
+    const note = await complete(ctx, config, { system, user: bodies, temperature: 0.2, maxTokens: Math.max(config.maxTokens, 3000) , signal })
     notes.push(note.trim())
     onProgress?.(Math.min(i + BATCH, total), total, '章节摘要')
   }
@@ -2688,7 +2685,7 @@ export async function reverseOutlineFromChapters(
   // 阶段 2：汇总反推总纲。
   onProgress?.(total, total, '生成大纲')
   const system2 = reverseOutlineSystemPrompt()
-  const outline = await complete(ctx, config, { system: system2, user: notes.join('\n\n'), temperature: 0.4, maxTokens: Math.max(config.maxTokens, 6000), reasoning: config.analysisReasoning ?? 'low' , signal })
+  const outline = await complete(ctx, config, { system: system2, user: notes.join('\n\n'), temperature: 0.4, maxTokens: Math.max(config.maxTokens, 6000) , signal })
   onProgress?.(total, total, '完成')
   return outline.trim()
 }
@@ -2724,7 +2721,6 @@ export async function analyzeAdaptation(
     user,
     temperature: 0.3,
     maxTokens: Math.max(config.maxTokens, 6000),
-    reasoning: config.analysisReasoning ?? 'low',
   })
   const raw = parseJsonObject<{ bookName?: unknown; outline?: unknown; dimensions?: unknown }>(textOut)
   const bookName = typeof raw.bookName === 'string' ? raw.bookName.trim() : '未命名'
@@ -2802,7 +2798,7 @@ async function reverseOutlineFromAdaptationText(
   }
   const system = reverseOutlineFromAdaptationSystemPrompt()
   const user = sample.join('\n\n---\n\n')
-  const text = await complete(ctx, config, { system, user, temperature: 0.4, maxTokens: Math.max(config.maxTokens, 6000), reasoning: config.analysisReasoning ?? 'low' })
+  const text = await complete(ctx, config, { system, user, temperature: 0.4, maxTokens: Math.max(config.maxTokens, 6000) })
   return text.trim()
 }
 
@@ -2818,7 +2814,7 @@ export async function proposeAdaptation(
   const dimLines = (dimensions ?? []).map(d => '- ' + d.title + '：' + d.current + '（可改度：' + d.mutability + '，风险：' + d.risk + '）').join('\n')
   const system = adaptationProposeSystemPrompt()
   const user = adaptationProposeUser(selLines, dimLines)
-  const out = await complete(ctx, config, { system, user, temperature: 0.3, maxTokens: Math.max(config.maxTokens, 6000), reasoning: config.analysisReasoning ?? 'low' })
+  const out = await complete(ctx, config, { system, user, temperature: 0.3, maxTokens: Math.max(config.maxTokens, 6000) })
   const raw = parseJsonObject<{ mappings?: unknown; rules?: unknown; impacts?: unknown }>(out)
   const mappings = Array.isArray(raw.mappings)
     ? raw.mappings
@@ -2944,7 +2940,6 @@ export async function rewriteAdaptationBook(
         user,
         temperature: 0.7,
         maxTokens: Math.max(config.maxTokens, Math.min(16000, c.body.length * 3)),
-        reasoning: config.analysisReasoning ?? 'low',
         signal: options.signal,
       })
       body = stripRewriteHeading(out)
@@ -3338,7 +3333,7 @@ async function auditBatch(
     `正文节选（每章前 700 字）：\n${chapterBlocks}`,
     '只输出 JSON 数组。',
   ].filter(s => s !== '').join('\n\n')
-  const text = await complete(ctx, config, { system, user, temperature: 0.2, maxTokens: Math.max(config.maxTokens, 12000), reasoning: config.analysisReasoning ?? 'low', model: config.auditModel, liveLabel: '质检查询' })
+  const text = await complete(ctx, config, { system, user, temperature: 0.2, maxTokens: Math.max(config.maxTokens, 12000), model: config.auditModel, liveLabel: '质检查询' })
   const parsed = parseJsonArray<Record<string, unknown>>(text)
   const issues: AuditIssue[] = []
   for (const entry of parsed) {
@@ -3403,7 +3398,7 @@ export async function generateBlurb(
       ? `已有开头草稿（请保留其内容与语气，续写补全为完整简介）：\n${partial.trim()}`
       : '请全量生成一份完整简介。',
   ].filter(s => s !== '').join('\n\n')
-  const text = await complete(ctx, config, { system, user, temperature: 0.7, maxTokens: Math.max(config.maxTokens, 4000), reasoning: config.analysisReasoning ?? 'low' })
+  const text = await complete(ctx, config, { system, user, temperature: 0.7, maxTokens: Math.max(config.maxTokens, 4000) })
   const blurb = text.replace(/^["'「『]|["'」』]$/g, '').replace(/^简介[：:]\s*/, '').trim().slice(0, 600)
   return blurb
 }
@@ -3562,7 +3557,7 @@ export async function extractWorld(
     '大纲：\n' + project.outline.slice(0, 5000),
     '只输出 JSON 对象。',
   ].filter(s => s !== '').join('\n\n')
-  const text = await complete(ctx, config, { system, user, temperature: 0.3, maxTokens: Math.max(config.maxTokens, 12000), reasoning: config.analysisReasoning ?? 'low' })
+  const text = await complete(ctx, config, { system, user, temperature: 0.3, maxTokens: Math.max(config.maxTokens, 12000) })
   const raw = parseJsonObject<{ realms?: unknown; regions?: unknown; factions?: unknown }>(text)
   const str = (value: unknown): string => typeof value === 'string' ? value.trim() : ''
   const objArray = (value: unknown): Record<string, unknown>[] =>
@@ -3709,7 +3704,7 @@ export async function suggestForeshadows(
     `大纲：\n${project.outline}`,
     `已规划章节数：${project.chapters.length}`,
   ].join('\n')
-  const text = await complete(ctx, config, { system: foreshadowSystemPrompt(), user, temperature: 0.5, maxTokens: Math.max(config.maxTokens, 12000), reasoning: config.analysisReasoning ?? 'low', liveLabel: '伏笔建议' })
+  const text = await complete(ctx, config, { system: foreshadowSystemPrompt(), user, temperature: 0.5, maxTokens: Math.max(config.maxTokens, 12000), liveLabel: '伏笔建议' })
   const parsed = parseJsonArray<Record<string, unknown>>(text)
   const existing = new Set(project.foreshadows.map(f => f.description))
   const created: Foreshadow[] = []
@@ -3821,7 +3816,7 @@ export async function runMarketRadar(
     '输出必须是合法 JSON 对象，不要输出任何其他文字。',
     'JSON 结构：{"signals":[{"id":"短横线稳定id","kind":"genre|protagonist|advantage|opening|relationship|title_pattern|opportunity|crowding","title":"一句话","detail":"说明（含读者满足点）","direction":"current|rising|stable|falling","recommended":true|false}], "productionFoundation":{"genre":{"existingId":null或资源名,"name":"题材名","description":"说明","template":"写法指引"},"primaryStoryMode":{"existingId":null或资源名,"name":"模式名","driver":"驱动力","readerExpectation":"读者期待"},"secondaryStoryMode":{同primary,可null或省略}}}',
   ].filter(s => s !== '').join('\n\n')
-  const text = await complete(ctx, config, { system: marketRadarSystemPrompt(), user, temperature: 0.4, maxTokens: Math.max(config.maxTokens, 8000), reasoning: config.analysisReasoning ?? 'low', liveLabel: '题材雷达' })
+  const text = await complete(ctx, config, { system: marketRadarSystemPrompt(), user, temperature: 0.4, maxTokens: Math.max(config.maxTokens, 8000), liveLabel: '题材雷达' })
   const raw = parseJsonObject<Record<string, unknown>>(text)
   const signalAs = (v: unknown): MarketRadarSignal[] => Array.isArray(v)
     ? v.filter((x): x is Record<string, unknown> => typeof x === 'object' && x !== null)
@@ -3894,7 +3889,7 @@ export async function runMarketCreativeBrief(ctx: Context, config: NovelConfig, 
     'JSON 结构：{"promptBlock":"可直接指导题材/金手指/首章爆点/整书方向的约束","openingIdea":"一段可直接开书的中文起始想法（主角身份、金手指或核心优势、开局事件、近期目标；不输出标题/大纲/Markdown）","coreAdvantage":"主角能做什么（含触发条件/使用边界/成长方向或代价至少一项）","bookSellingPoint":"读者持续追读的核心满足点","first30ChapterPromise":"前30章必须兑现的阶段结果/关系变化/能力成长"}',
     '严禁复用榜单作品的人名、专有设定、简介句子和完整书名；一律使用身份或通用场景称谓，不得输出具体人名/作品名。',
   ].filter(s => s !== '').join('\n\n')
-  const text = await complete(ctx, config, { system: marketRadarSystemPrompt(), user, temperature: 0.5, maxTokens: Math.max(config.maxTokens, 4000), reasoning: config.analysisReasoning ?? 'low', liveLabel: '开书创意' })
+  const text = await complete(ctx, config, { system: marketRadarSystemPrompt(), user, temperature: 0.5, maxTokens: Math.max(config.maxTokens, 4000), liveLabel: '开书创意' })
   const cb = parseJsonObject<Record<string, unknown>>(text)
   return {
     promptBlock: typeof cb.promptBlock === 'string' ? cb.promptBlock.slice(0, 800) : '',
@@ -3953,7 +3948,6 @@ export async function runTextTool(ctx: Context, config: NovelConfig, mode: 'dist
     user,
     temperature: mode === 'distill' ? 0.4 : 0.8,
     maxTokens: Math.max(config.maxTokens, 4000),
-    reasoning: config.analysisReasoning ?? 'low',
     liveLabel: mode === 'distill' ? '文本蒸馏' : '文本洗稿',
   })
   return text.trim()
@@ -4029,7 +4023,7 @@ export async function runMarketIdeaInspiration(
     '输出必须是合法 JSON 对象。',
     'JSON 结构：{"ideas":[{"title":"书名/门面","hook":"一句话钩子/开局爆点","genre":"题材","pov":"主角视角/身份","payoff":"长期追读兑现"}]}',
   ].filter(s => s !== '').join('\n\n')
-  const text = await complete(ctx, config, { system, user, temperature: 0.8, maxTokens: Math.max(config.maxTokens, 4000), reasoning: config.analysisReasoning ?? 'low', liveLabel: '市场灵感' })
+  const text = await complete(ctx, config, { system, user, temperature: 0.8, maxTokens: Math.max(config.maxTokens, 4000), liveLabel: '市场灵感' })
   const raw = parseJsonObject<Record<string, unknown>>(text)
   const str = (v: unknown): string => typeof v === 'string' ? v.trim().slice(0, 200) : ''
   const arr = (v: unknown): Array<{ title: string; hook: string; genre: string; pov: string; payoff: string }> => Array.isArray(v)

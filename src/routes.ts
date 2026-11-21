@@ -3779,7 +3779,7 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
         const cur: BookSettings = project.bookSettings ?? {}
         const p = body.patch
         const next: Record<string, unknown> = { ...cur }
-        for (const key of ['provider', 'model', 'reasoningEffort', 'analysisReasoning', 'chapterChars', 'maxTokens', 'reviewPassScore', 'autoReview', 'autoAuthorReview', 'autoReviewAfterRevise'] as const) {
+        for (const key of ['provider', 'model', 'chapterChars', 'maxTokens', 'reviewPassScore', 'autoReview', 'autoAuthorReview', 'autoReviewAfterRevise'] as const) {
           const v = (p as Record<string, unknown>)[key]
           if (v === null) delete next[key]
           else if (v !== undefined) next[key] = v

@@ -10,7 +10,6 @@ import type { MoveOutputDirResponse, NovelConfig } from '../../protocol.ts'
 import { tt } from './helpers.ts'
 import { RUN_CHIP_MODE_OPTIONS, readRunChipMode, writeRunChipMode, type RunChipMode } from '../chip-prefs.ts'
 import { ModelManager } from './ModelManager.tsx'
-import { ReasoningSection } from './ReasoningSection.tsx'
 import { SubPage } from './SubPage.tsx'
 import css from './panel.module.css'
 
@@ -112,8 +111,6 @@ export function SettingsView({ api, variant = 'page', onSettingsTab, onEditorFon
         fallbackModel: configDraft.fallbackModel ?? '',
         fallbackMaxTokens: configDraft.fallbackMaxTokens ?? 0,
         autoTimeline: configDraft.autoTimeline ?? true,
-        reasoningEffort: configDraft.reasoningEffort ?? 'off',
-        analysisReasoning: configDraft.analysisReasoning ?? 'low',
         chapterChars: configDraft.chapterChars,
         maxTokens: configDraft.maxTokens,
         reviewPassScore: configDraft.reviewPassScore,
@@ -254,11 +251,6 @@ export function SettingsView({ api, variant = 'page', onSettingsTab, onEditorFon
               抽取失败不会阻断出章；可在侧柜「故事时间线」里手工抽取、修正，并一键检查时间倒流 / 地点瞬移等矛盾。
             </span>
           </div>
-          <ReasoningSection
-            reasoningEffort={configDraft.reasoningEffort ?? 'off'}
-            analysisReasoning={configDraft.analysisReasoning ?? 'low'}
-            onChange={patch => setConfigDraft({ ...configDraft, ...patch })}
-          />
         </>
       )}
 

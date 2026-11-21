@@ -13,7 +13,6 @@ import { parseEnum, parseIntInRange, parseNumberRecord } from './storage-parse.t
 import { usePersistentState } from './usePersistentState.ts'
 import type { PanelController } from './controller.ts'
 import { moveFocusByArrow, tt } from './helpers.ts'
-import { ReasoningSection } from './ReasoningSection.tsx'
 import LiveFeedLog from './LiveFeedLog.tsx'
 import { CmdPalette } from './CmdPalette.tsx'
 import { useConfirm, useDialogFocus } from './ConfirmDialog.tsx'
@@ -519,7 +518,7 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
     return () => { cancelled = true }
   }, [api, shelf?.activeBookId])
   /** 本书参数的十个键（保存/恢复用同一顺序）。 */
-  const BOOK_CFG_KEYS = ['provider', 'model', 'reasoningEffort', 'analysisReasoning', 'chapterChars', 'maxTokens', 'reviewPassScore', 'autoReview', 'autoAuthorReview', 'autoReviewAfterRevise'] as const
+  const BOOK_CFG_KEYS = ['provider', 'model', 'chapterChars', 'maxTokens', 'reviewPassScore', 'autoReview', 'autoAuthorReview', 'autoReviewAfterRevise'] as const
   /** 保存本书参数（留空字段转 null = 清除覆盖、回退全局）。 */
   const saveBookCfg = async (): Promise<void> => {
     if (bookCfg === null) return
@@ -3907,13 +3906,6 @@ export function NovelPanel({ controller, api }: NovelPanelProps) {
                     <span className={css.meta}>{tt('settings.autoReviewAfterReviseHint')}</span>
                   </div>
                 </div>
-
-                {/* 推理力度（本书） */}
-                <ReasoningSection
-                  reasoningEffort={bookCfg.reasoningEffort ?? 'off'}
-                  analysisReasoning={bookCfg.analysisReasoning ?? 'low'}
-                  onChange={patch => { setBookCfg({ ...bookCfg, ...patch }) }}
-                />
 
                 {/* 导出（本书）：按范围导出——整本正文 / 设定 / 规划 / 角色 / 质检记录 / 项目备份 JSON */}
                 <div className={`${css.card} ${css.settingsCard}`} style={{ gap: 'var(--nf-space-12)' }}>

@@ -1336,10 +1336,6 @@ export interface BookSettings {
   provider?: string
   /** 本书使用的主模型 id。 */
   model?: string
-  /** 本书写作推理档位。 */
-  reasoningEffort?: 'off' | 'low' | 'high' | 'max'
-  /** 本书分析类任务推理档位。 */
-  analysisReasoning?: 'off' | 'low' | 'high' | 'max'
   /** 本书每章目标字数。 */
   chapterChars?: number
   /** 本书单章最大输出 tokens。 */
@@ -1497,10 +1493,6 @@ export interface NovelConfig {
   fallbackMaxTokens?: number
   /** 是否在出章后自动抽取故事时间线（失败不阻断出章）。默认开。 */
   autoTimeline?: boolean
-  /** LLM reasoning effort: off = no thinking; low/high/max = thinking intensity. */
-  reasoningEffort: 'off' | 'low' | 'high' | 'max'
-  /** 分析类任务（提炼/拆书/反推大纲等）的推理档位；默认 low，不受上面写作档位影响。 */
-  analysisReasoning: 'off' | 'low' | 'high' | 'max'
   /** Target characters per chapter. */
   chapterChars: number
   /** Max output tokens per chapter call. */
@@ -1977,8 +1969,6 @@ export interface ConfigPatch {
   fallbackMaxTokens?: number
   /** 出章后自动抽取故事时间线（默认开）。 */
   autoTimeline?: boolean
-  reasoningEffort?: 'off' | 'low' | 'high' | 'max'
-  analysisReasoning?: 'off' | 'low' | 'high' | 'max'
   chapterChars?: number
   maxTokens?: number
   reviewPassScore?: number
