@@ -45,6 +45,8 @@ export const NOVEL_API = {
   timeline: '/api/my-novel-forge/timeline',
   marketRadar: '/api/my-novel-forge/market-radar',
   marketRadarScan: '/api/my-novel-forge/market-radar/scan',
+  /** 按书名全网搜索（起点/晋江）：POST { keyword } → 可勾选的候选作品。 */
+  bookSearch: '/api/my-novel-forge/market-radar/book-search',
   marketRadarApply: '/api/my-novel-forge/market-radar/apply',
   marketRadarSync: '/api/my-novel-forge/market-radar/foundation-sync',
   marketRadarBrief: '/api/my-novel-forge/market-radar/brief',

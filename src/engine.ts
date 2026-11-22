@@ -3803,11 +3803,18 @@ export async function runMarketRadar(
     req.platform !== undefined && req.platform !== '' ? `目标平台：${req.platform}` : '',
     req.genre !== undefined && req.genre !== '' ? `目标题材：${req.genre}` : '',
     req.keywords !== undefined && req.keywords !== '' ? `关键词：${req.keywords}` : '',
-    (req.candidates !== undefined && req.candidates.length > 0)
-      ? '【上榜记录（真实榜单）】\n' + req.candidates.map((c, i) => `- ${i + 1}.《${c.title}》${c.author !== undefined && c.author !== '' ? `（${c.author}）` : ''}${(c.tags?.length ?? 0) > 0 ? ` [${c.tags!.join('、')}]` : ''}${c.category !== undefined && c.category !== '' ? ` ${c.category}` : ''}${c.synopsis !== undefined && c.synopsis !== '' ? `：${c.synopsis.slice(0, 140)}` : ''}`).join('\n')
-      : (req.feedText !== undefined && req.feedText !== '')
-        ? '【榜单/市场线索】\n' + req.feedText.slice(0, 6000)
-        : '（无榜单数据，请基于平台/题材/关键词与你的市场知识归纳）',
+    // 两种榜单输入可同时存在：勾选的候选是结构化记录，网址抓取/粘贴的是原始文本。
+    // 旧实现用三目二选一，导致勾了候选时 feedText 被整个丢弃——只抓网址不扫榜就分析
+    // 更是在前端被按钮拦住。这里改成并列注入，各自保留。
+    ...(req.candidates !== undefined && req.candidates.length > 0
+      ? ['【上榜记录（真实榜单）】\n' + req.candidates.map((c, i) => `- ${i + 1}.《${c.title}》${c.author !== undefined && c.author !== '' ? `（${c.author}）` : ''}${(c.tags?.length ?? 0) > 0 ? ` [${c.tags!.join('、')}]` : ''}${c.category !== undefined && c.category !== '' ? ` ${c.category}` : ''}${c.synopsis !== undefined && c.synopsis !== '' ? `：${c.synopsis.slice(0, 140)}` : ''}`).join('\n')]
+      : []),
+    ...(req.feedText !== undefined && req.feedText !== ''
+      ? ['【榜单/市场线索】\n' + req.feedText.slice(0, 6000)]
+      : []),
+    ...(req.candidates === undefined || req.candidates.length === 0 ? (req.feedText === undefined || req.feedText === ''
+      ? ['（无榜单数据，请基于平台/题材/关键词与你的市场知识归纳）']
+      : []) : []),
     '',
     '现有题材基底库：\n' + (genreCatalog || '空'),
     '',

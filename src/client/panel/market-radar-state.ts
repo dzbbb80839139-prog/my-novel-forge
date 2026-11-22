@@ -8,7 +8,7 @@
  * 需求变化，改动方向也是照着条件走，而不是照着某个外部实现的形状走。
  *
  *  R1 扫榜或分析进行中，不得改动作品勾选（否则分析输入与界面不一致）；
- *  R2 未勾选任何作品时不能开始分析；
+ *  R2 既未勾选作品、也没有榜单文本时不能开始分析（两者任一即可作为输入）；
  *  R3 已经有报告之后，仍允许改选作品并**再次**分析 —— 不得退化成"只能查看"；
  *  R4 信号勾选只在确实换了一份报告时复位；同一份报告的重渲染不得冲掉作者手选。
  */
@@ -24,7 +24,7 @@ export interface RadarControls {
   /**
    * 分析按钮的文案标识：
    *  - `wait`：还在扫榜，先等榜单；
-   *  - `pick`：还没勾选作品；
+   *  - `pick`：既没勾选作品、也没有榜单文本；
    *  - `first`：首次分析；
    *  - `again`：已有报告，这次是再出一份。
    */
@@ -43,6 +43,8 @@ export function radarControls(state: {
   analyzing: boolean
   /** 已勾选的作品数。 */
   pickedCount: number
+  /** 是否已获得榜单文本（网址抓取或手工粘贴），可替代作品勾选作为分析输入。 */
+  hasFeedText: boolean
   /** 界面上是否已有可查看的报告。 */
   hasReport: boolean
 }): RadarControls {
@@ -53,7 +55,7 @@ export function radarControls(state: {
   if (state.scanning) {
     return { canScan: false, canSelectCandidates: false, canAnalyze: false, analyzeLabel: 'wait' }
   }
-  if (state.pickedCount === 0) {
+  if (state.pickedCount === 0 && !state.hasFeedText) {
     return { canScan: true, canSelectCandidates: true, canAnalyze: false, analyzeLabel: 'pick' }
   }
   return {

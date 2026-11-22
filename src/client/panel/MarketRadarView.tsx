@@ -50,6 +50,9 @@ export default function MarketRadarView({ api, bookId }: { api: NovelApi; bookId
   /** 粘贴榜单页网址 → 用工坊自带抓取器取正文填入 feedText。 */
   const [feedUrl, setFeedUrl] = useState('')
   const [fetchingUrl, setFetchingUrl] = useState(false)
+  /** 按书名全网搜索：关键词、进行中标记。结果塞进 scanGroups 复用勾选/分析链路。 */
+  const [bookQuery, setBookQuery] = useState('')
+  const [searchingBook, setSearchingBook] = useState(false)
   const [applied, setApplied] = useState('')
   const [syncBusy, setSyncBusy] = useState(false)
   const [syncedMsg, setSyncedMsg] = useState('')
@@ -65,10 +68,15 @@ export default function MarketRadarView({ api, bookId }: { api: NovelApi; bookId
       scanning,
       analyzing,
       pickedCount: selectedCandidates.size,
+      hasFeedText: feedText.trim() !== '',
       hasReport: result !== null,
     }),
-    [scanning, analyzing, selectedCandidates, result],
+    [scanning, analyzing, selectedCandidates, feedText, result],
   )
+  /** 分析按钮文案里标出本次输入来源，避免"0 本"这种误导。 */
+  const inputLabel = selectedCandidates.size > 0
+    ? `${selectedCandidates.size} 本`
+    : '榜单文本'
 
   const candKey = (g: ScanGroup, item: ScanItem): string => `${g.platform}:${g.listKey}:${item.rank}`
   const togglePlatform = (p: string): void => {
@@ -96,6 +104,41 @@ export default function MarketRadarView({ api, bookId }: { api: NovelApi; bookId
       setError(`抓取失败：${(err as Error).message}`)
     } finally {
       setFetchingUrl(false)
+    }
+  }
+
+  /** 按书名全网搜索：结果包装成 ScanGroup 塞进现有候选列表，直接可勾选分析。 */
+  const searchBook = async (): Promise<void> => {
+    const keyword = bookQuery.trim()
+    if (keyword === '') { setError('请填写书名'); return }
+    setSearchingBook(true)
+    setError('')
+    try {
+      const r = await api.bookSearch(keyword)
+      if (r.error !== undefined) { setError(r.error); return }
+      const result = r.result
+      if (result === undefined) { setError('搜索无返回'); return }
+      const hits = result.hits
+      const groups: ScanGroup[] = Array.from(new Set(hits.map(h => h.platform))).map(platform => {
+        const platformHits = hits.filter(h => h.platform === platform)
+        return {
+          platform,
+          platformLabel: platformHits[0]?.platformLabel ?? platform,
+          listKey: 'book-search',
+          listLabel: `「${keyword}」搜索结果`,
+          status: 'ok' as const,
+          items: platformHits.map(({ rank, title, author, tags, synopsis, category }) => ({ rank, title, author, tags, synopsis, category })),
+        }
+      })
+      // 搜索替换掉上一次的搜索分组，但保留榜单扫榜分组；勾选以新结果为准。
+      setScanGroups(prev => [...(prev ?? []).filter(g => g.listKey !== 'book-search'), ...groups])
+      setSelectedCandidates(new Set())
+      if (groups.length === 0) setError('没搜到相关作品，换个书名试试')
+      else if (result.errors.length > 0) setError(`部分平台抓取失败：${result.errors.map(e => e.platform).join('、')}（其它平台结果仍可用）`)
+    } catch (err) {
+      setError(`搜索失败：${(err as Error).message}`)
+    } finally {
+      setSearchingBook(false)
     }
   }
 
@@ -144,9 +187,9 @@ export default function MarketRadarView({ api, bookId }: { api: NovelApi; bookId
   }
 
   const analyze = async (): Promise<void> => {
-    if (scanGroups === null) return
+    // 榜单文本与勾选作品二选一即可分析：只抓了网址、没扫榜也能直接出结论。
     const candidates: Array<{ title: string; author?: string; tags?: string[]; synopsis?: string; category?: string }> = []
-    for (const g of scanGroups) if (g.status === 'ok') for (const it of g.items) if (selectedCandidates.has(candKey(g, it))) candidates.push({ title: it.title, author: it.author, tags: it.tags, synopsis: it.synopsis, category: it.category })
+    for (const g of scanGroups ?? []) if (g.status === 'ok') for (const it of g.items) if (selectedCandidates.has(candKey(g, it))) candidates.push({ title: it.title, author: it.author, tags: it.tags, synopsis: it.synopsis, category: it.category })
     setAnalyzing(true)
     setError('')
     try {
@@ -259,7 +302,26 @@ export default function MarketRadarView({ api, bookId }: { api: NovelApi; bookId
           ))}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--nf-space-6)' }}>
-          <label className={css.fieldLabel}>从网址抓榜单（可选，贴榜单页链接自动抓正文；依赖 DSH 的 read-url 插件）</label>
+          <label className={css.fieldLabel}>按书名搜索（全网搜索起点 / 晋江，结果可直接勾选分析）</label>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input
+              className={css.input}
+              style={{ flex: '1 1 260px' }}
+              value={bookQuery}
+              onChange={e => setBookQuery(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') void searchBook() }}
+              placeholder="输入书名，如：凡人修仙"
+            />
+            <button type="button" className={`${css.button} ${css.buttonSmall}`} disabled={searchingBook || bookQuery.trim() === ''} onClick={() => { void searchBook() }}>
+              {searchingBook ? '搜索中…' : '搜索书名'}
+            </button>
+          </div>
+          <span style={{ fontSize: 11, color: 'var(--nf-text-2)' }}>
+            搜到的作品会进入下方候选列表；勾选后点「开始 分析」即可。番茄的搜索接口属作者后台、需登录，暂不支持按书名搜（番茄榜单仍可正常扫榜）。
+          </span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--nf-space-6)' }}>
+          <label className={css.fieldLabel}>从网址抓榜单（贴榜单页链接自动抓正文；工坊自带抓取，无需额外插件）</label>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input
               className={css.input}
@@ -275,7 +337,7 @@ export default function MarketRadarView({ api, bookId }: { api: NovelApi; bookId
           </div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--nf-space-6)' }}>
-          <label className={css.fieldLabel}>榜单文本兜底（可选，粘贴公开榜单文本；扫榜失败时可用于人工候选）</label>
+          <label className={css.fieldLabel}>榜单文本（可选，网址抓取或手工粘贴；可直接作为分析输入，无需扫榜）</label>
           <textarea className={css.input} style={{ minHeight: 90, resize: 'vertical' }} value={feedText} onChange={e => setFeedText(e.target.value)} placeholder="粘贴一份公开榜单文本…" />
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -283,19 +345,19 @@ export default function MarketRadarView({ api, bookId }: { api: NovelApi; bookId
             {scanning ? '正在扫榜…' : '扫榜'}
           </button>
           {scanning && <span style={{ fontSize: 12, color: 'var(--nf-text-2)' }}>正在抓取公开榜单（{platforms.map(p => PLATFORM_LABELS[p]).join('、')}），多平台并行，约 10–30 秒…</span>}
-          {scanGroups !== null && (
+          {(scanGroups !== null || feedText.trim() !== '') && (
             <button type="button" className={css.button} style={{ marginLeft: 8 }} disabled={!controls.canAnalyze} onClick={() => { void analyze() }}>
               {analyzing
                 ? '分析中…'
                 : controls.analyzeLabel === 'again'
-                  ? `生成新分析（${selectedCandidates.size} 本）`
-                  : `开始 分析（${selectedCandidates.size} 本）`}
+                  ? `生成新分析（${inputLabel}）`
+                  : `开始 分析（${inputLabel}）`}
             </button>
           )}
         </div>
-        {scanGroups !== null && controls.analyzeLabel === 'pick' && (
+        {controls.analyzeLabel === 'pick' && (
           <span style={{ fontSize: 12, color: 'var(--nf-text-2)' }}>
-            {result !== null ? '上一份分析仍在下方可查看；改选作品后可生成新的分析（无需重新扫榜）。' : '请先勾选要分析的作品。'}
+            请先勾选要分析的作品，或在上方贴入榜单网址抓取正文 / 手工粘贴榜单文本。
           </span>
         )}
       </div>

@@ -162,6 +162,7 @@ import { scanAiFlavor } from './ai-scan.ts'
 import { compareStyleFingerprint, extractStyleFingerprint } from './style-fingerprint.ts'
 import { livePrompt, liveUsage, resetLiveUsage, subscribeLiveFeed } from './llm-live.ts'
 import { scanMarketRanking } from './market-radar-scan.ts'
+import { searchBooksByTitle } from './market-radar-search.ts'
 import { addGlobalGenre, addGlobalMode, globalGenreLibrary, globalProgressionLibrary } from './global-assets.ts'
 import {
   chapterFileName,
@@ -1707,6 +1708,28 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
       const body = await readJsonBody<{ platforms?: string[] }>(req)
       try {
         const result = await scanMarketRanking(body?.platforms)
+        writeJson(res, 200, { result })
+      } catch (error) {
+        writeJson(res, 500, { error: (error as Error).message })
+      }
+    },
+  }
+
+  // ------------------------------------------------- market-radar book search
+  /** 按书名全网搜索：起点/晋江搜索页抓取，结果与榜单候选同构，可直接勾选分析。 */
+  const bookSearchRoute: WebRoute = {
+    kind: 'exact',
+    path: NOVEL_API.bookSearch,
+    handler: async (req, res) => {
+      if (!guard(req, res, 'POST')) return
+      const body = await readJsonBody<{ keyword?: string }>(req)
+      const keyword = (body?.keyword ?? '').trim()
+      if (keyword === '') {
+        writeJson(res, 400, { error: '请填写书名' })
+        return
+      }
+      try {
+        const result = await searchBooksByTitle(keyword)
         writeJson(res, 200, { result })
       } catch (error) {
         writeJson(res, 500, { error: (error as Error).message })
@@ -4224,6 +4247,7 @@ export function makeRoutes(deps: NovelRoutesDeps): WebRoute[] {
     styleDetectRoute,
     marketRadarRoute,
     marketRadarScanRoute,
+    bookSearchRoute,
     marketRadarApplyRoute,
     marketRadarSyncRoute,
     marketRadarBriefRoute,

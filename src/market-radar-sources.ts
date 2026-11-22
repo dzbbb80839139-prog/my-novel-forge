@@ -51,7 +51,7 @@ function decodeEntities(value: string): string {
   })
 }
 
-function plainText(value: string | undefined): string {
+export function plainText(value: string | undefined): string {
   return decodeEntities((value ?? '').replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim()
 }
 

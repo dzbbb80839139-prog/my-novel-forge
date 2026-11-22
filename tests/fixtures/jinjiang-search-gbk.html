@@ -1,0 +1,294 @@
+    <!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.0//EN" "http://www.wapforum.org/DTD/xhtml-mobile10.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="zh">
+    <head>
+        <style type="text/css" media="screen">
+            body {
+                -moz-user-select: none;
+                -webkit-user-select: none;
+                -ms-user-select:none;
+                -khtml-user-select:none;
+            }
+        </style>
+        <script type="text/javascript">
+            var protocolStr = document.location.protocol;
+            if (protocolStr=="http:") {
+                window.location.href = window.location.href.replace("http:", "https:");
+            }
+            document.onselectstart = function(e) {
+                return false;
+            }
+            document.oncontextmenu = function(e) {
+                return false;
+            }
+        </script>
+        <meta http-equiv="Content-Type" content="text/html; charset=gb18030" />
+        <meta name="viewport"content="width=device-width, initial-scale=1"/>
+        <meta name="apple-itunes-app" content="app-id=966807283"/>
+<title>搜索“凡人修仙”- 晋江文学城 - 手机版</title>
+<link rel="stylesheet" type="text/css" href="//m-static.jjwxc.net/wap/css/default.css" /></head>
+<body>
+    <!-- 内容 -->
+    <div class="grid-c">
+        <style>
+    #mclear{border:none;background: url(//s9-static.jjwxc.net/images/clear.png) no-repeat;width:15px;height:15px;outline:none;background-size:13px;vertical-align:middle;margin-left:-15px;}
+    .hide_menu{display:none}
+    .show_menu{display: block}
+    a {text-decoration:none;}
+    #menu_list a {display: inline-block}
+    @media (prefers-color-scheme: dark) {
+        a:link{color: #5A7A9E;}
+        .big.o a:link{color:#5A7A9E;}
+        .big.o{color:#5A7A9E;}
+    }
+    /*纯字*/
+    .double_column_simple td>ul>li{max-height: 2em;line-height:1.8em; overflow: hidden;word-wrap: break-word;word-break: break-all;line-break: anywhere;}
+    .double_column_div ul>li{max-height: 1.8em;line-height:1.8em;overflow: hidden;word-wrap: break-word;word-break: break-all;line-break: anywhere;}
+    /*顺序排在一行  带星号*/
+    .double_column td>ul>li{height: 1.8em;line-height:1.8em;overflow: hidden;word-wrap: break-word;word-break: break-all;display: flex;flex-wrap: nowrap;line-break: anywhere;}
+    /*左边靠左右边靠右*/
+    .double_column_flex ul>li{display: flex;flex-wrap: nowrap;}
+    .double_column_flex ul>li>a:first-child{display: flex;flex-wrap: nowrap;height: 2em;line-height:1.8em;overflow: hidden;flex: 1;}
+</style>
+<script type="text/javascript" src="//static.jjwxc.net/scripts/jquery-1.8.0.min.js?ver=20161210"></script>
+<script type="text/javascript" src="//static.jjwxc.net/scripts/jquery.blockUI.js"></script>
+<script type="text/javascript" src="//static.jjwxc.net/scripts/auto_save_text.js" charset="GBK"></script>
+<script>
+    function isonlinedoublered(type) {
+        if (type==2) {
+            return true;
+        }
+        if (type!=1) {
+            return false;
+        }
+        //2015.02.18-2015.03.05
+        var localtime = Math.round(new Date().getTime()/1000);
+        if (parseInt(localtime)>=1424188800&&parseInt(localtime)<=1425571199) {
+            return true;
+        }
+        return false;
+    }
+    var search_novelname_arr = [];
+    var search_timer;
+    var commentbody_textarea;
+    $(function() {
+        if (isonlinedoublered(1)) {
+            // 翻倍红包公告提示
+            $.ajax({
+                type: "get",
+                async: true, //同步异步 true为异步(默认),false为同步
+                url: "//s8-static.jjwxc.net/public_notice.php", //实际上访问时产生的地址为: test.php?callbackfun=jsonpCallback&id=10
+                cache: true, //默认值false false时生成随机的&_=随机数
+                dataType: "jsonp",
+                jsonpCallback: "red_envelope_150204",
+                ifModified: true,
+                success: function(json) {
+                    var msg = '';
+                    $.each(json.publicMsg, function(index, v) {
+                        msg += v+"&nbsp;&nbsp;&nbsp;&nbsp;";
+                    });
+                    if (msg!='') {
+                        $("#public_notice_new td#noticeImg").html('<img src="//s9-static.jjwxc.net/images/laba.png" />');
+                        $("#public_notice_new").css('display', 'block');
+                        $("#public_info_show").html(msg);
+                    }
+                }
+            });
+        }
+        // 内置搜索
+        if ($('#searchnovelname').val().trim()) {
+            search_novelname_arr = $('#searchnovelname').val().split(',');
+            if (search_novelname_arr.length > 1) {
+                setSearchNovelName();
+                var change_time = 2000;
+                search_timer = setInterval(function() {
+                    setSearchNovelName();
+                }, change_time);
+                $('#autoComplete').on('focus',function() {
+                    clearInterval(search_timer);
+                });
+                $('#autoComplete').on('blur',function() {
+                    search_timer = setInterval(function() {
+                        setSearchNovelName();
+                    }, change_time);
+                });
+            } else {
+                $('#autoComplete').attr('placeholder', search_novelname_arr[0]);
+            }
+        }
+        let sid = getcookie("sid");
+        // if (sid == '') {//隐藏掉我的收藏按钮
+        //     $("#myFav").css("display", "none");
+        // } else {//显示出我的收藏按钮
+        //     $("#myFav").css("display", "inline");
+        // }
+        if ($('#area').length === 1 && typeof autoSaveTextarea === 'function' && $('#commentbody_write').length === 1) {
+            commentbody_textarea = autoSaveTextarea('#area');
+            $('#commentbody_write').on('click', function(e) {
+                commentbody_textarea.clearCurrentData(true);
+            });
+        }
+    });
+
+    //输入框的清空事件
+    function clearkey() {
+        $("#autoComplete").val("");
+    }
+
+    function setSearchNovelName() {
+        if (search_novelname_arr.length === 0) {
+            search_novelname_arr = $('#searchnovelname').val().split(',');
+        }
+        var searchText = search_novelname_arr.splice(0, 1);
+        $('#autoComplete').attr('placeholder', searchText);
+    }
+</script>
+<script type="text/javascript" src="//static.jjwxc.net/scripts/wap.main.js?ver=20260810"></script>
+<div class="b module" style="display:flex">
+    <div style="display:inline-block;">
+        <a href="/"><img src="//m-static.jjwxc.net/images/wap/logo2.png" style="width:43px;" alt="晋江文学城"/></a>
+    </div>
+    <div id='logininfo' style="display:inline-block; margin-left: 5px;"></div>
+</div>
+
+<div class="module show_menu">
+            <div><form method="get" action="/search" onsubmit="if(!$('#autoComplete').val()){$('#autoComplete').val($('#autoComplete').attr('placeholder'))};return true;">
+            <input type="hidden" name="version" value="1"/>
+        <div style="display: -webkit-flex;display: flex;flex-direction: row;align-items:stretch;max-width: 350px;">
+            <div style="flex:1;">
+                <input name = "kw" id = "autoComplete" autocomplete = "off" type = "text" value = "" placeholder="" style="width: 82%;padding-right: 1.2em;height: 17px;"/><input type="button"  id="mclear"  onclick="clearkey()"/>
+            </div>
+            <div>
+                <input type="radio" name="t" value="1" checked>书名<input type="radio" name="t" value="2" >作者<input type="submit" value="搜索">&nbsp;<a href="/assort">高级搜索</a>
+            </div>
+        </div></form></div>
+    <input type="hidden" id="searchnovelname" value="">
+</div>
+</div>
+<div>
+    <table style="width:100%;margin:5px 0px 0px 0px;display: none;" id="public_notice_new">
+        <tr>
+            <td style="width:20px;" id="noticeImg">
+            </td>
+            <td>
+        <marquee scrollAmount="3" id="public_info_show" onmouseover="this.stop()" onmouseout="this.start()"></marquee>
+        </td>
+        </tr>
+    </table>
+</div>        <div class="b module">
+            <script type="text/javascript" src="//static.jjwxc.net/scripts/rank_click_track.js?var=20250115"></script>
+            <h2 class="big o"><a href="/">首页</a>>搜索 "凡人修仙" 结果</h2>
+            <div>
+                排序方式：
+                <a href='javascript:void(0)' style='font-weight:bold;'>相关性</a>|<a href=/search/index/page/1?kw=凡人修仙&t=1&o=1>积分</a>|<a href=/search/index/page/1?kw=凡人修仙&t=1&o=2>最近更新</a>|<a href=/search/index/page/1?kw=凡人修仙&t=1&o=3>最新发表</a>|<a href=/search/index/page/1?kw=凡人修仙&t=1&o=4>字数</a>|<a href=/search/index/page/1?kw=凡人修仙&t=1&o=5>收藏数</a>|<a href=/search/index/page/1?kw=凡人修仙&t=1&o=9>完结高分</a>|<a href=/search/index/page/1?kw=凡人修仙&t=1&o=8>大众化指数</a>|<a href=/search/index/page/1?kw=凡人修仙&t=1&o=10>随机排序</a>            </div>
+            <hr/>
+            <ul>
+                                                                    <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"6429033","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/6429033"><span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>传</a> - <a href="/wapauthor/2758526">冷无忧</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"6276742","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/6276742"><span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>传</a> - <a href="/wapauthor/3944798">双子传奇</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"9087998","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/9087998"><span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>指南</a> - <a href="/wapauthor/6410749">椿水楠</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"7137072","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/7137072"><span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>记。</a> - <a href="/wapauthor/4326862">花族锦</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"10925019","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/10925019">《<span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>之途》</a> - <a href="/wapauthor/7746346">大士01919</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"6551317","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/6551317">末世<span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>传</a> - <a href="/wapauthor/4512776">卿創</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"1298229","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/1298229">（<span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>传）仙路</a> - <a href="/wapauthor/581491">凡世</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"9681289","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/9681289">【<span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>传】非仙</a> - <a href="/wapauthor/934893">群青澜</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"4891978","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/4891978">末世<span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>记</a> - <a href="/wapauthor/2384116">秋小壳</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"8280553","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/8280553">[<span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>传]玄同传</a> - <a href="/wapauthor/5650742">无暗永明鸟</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"9621411","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/9621411"><span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>传之锁清秋</a> - <a href="/wapauthor/4475426">金锁玉关</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"8342596","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/8342596"><span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>三十五</a> - <a href="/wapauthor/4654114">鸢飏</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"11164610","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/11164610"><span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>传混沌篇</a> - <a href="/wapauthor/7908642">凡人梦</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"6946646","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/6946646"><span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>传之生而知之</a> - <a href="/wapauthor/2677878">小六壬</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"9485463","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/9485463">玄骨那些事[<span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>传]</a> - <a href="/wapauthor/6392698">买瓶烧酒喂狗吃</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"8679628","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/8679628">[<span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>传]你又被揍了？</a> - <a href="/wapauthor/2862199">vv冥微阳</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"9950248","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/9950248"><span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>传同人（云月儿）</a> - <a href="/wapauthor/4028547">七贝ann</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"7961944","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/7961944"><span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>，但伴侣是仙尊</a> - <a href="/wapauthor/4789979">圆沅</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"9966128","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/9966128">[<span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>传]痴女修仙</a> - <a href="/wapauthor/789115">讲太多</a>                                                                                            </li>
+                        
+                                                                            <li>
+                                <a data-recommendInfo='{"recommendid":"6b030e36e0017","relationNovelid":"3535079","readerid":0,"recommendSystem":504,"rankid":2}' class="track" href="/book2/3535079"><span style="color:red">凡</span><span style="color:red">人</span><span style="color:red">修</span><span style="color:red">仙</span>传之厉飞雨</a> - <a href="/wapauthor/1296012">子不语神鬼</a>                                                                                            </li>
+                        
+                                            <li>
+<p class="pagination">
+
+   		<a href="https://m.jjwxc.net/search/index/page/2?version=1&kw=%B7%B2%C8%CB%D0%DE%CF%C9&t=1">下一页</a>
+	
+
+	
+									<strong>1</strong>
+												<a href="https://m.jjwxc.net/search/index/page/2?version=1&kw=%B7%B2%C8%CB%D0%DE%CF%C9&t=1">2</a>
+												<a href="https://m.jjwxc.net/search/index/page/3?version=1&kw=%B7%B2%C8%CB%D0%DE%CF%C9&t=1">3</a>
+					
+	   		上一页	
+	
+</p></li>
+                                </ul>
+        </div>
+
+    </div>
+    <input type="hidden" id="max_page" value="3">
+    <input type="hidden" id="is_random_sort" value="1">
+    <script>
+        if ($('#is_random_sort').val() == '1') {
+            $('.pagination > a').each(function() {
+                var newUrl = new URL($(this).attr('href'));
+                $(this).attr('href', newUrl.searchParams.set('m_p', $('#max_page').val()));
+            });
+        }
+    </script>
+    <!-- 页脚 -->
+    <div class="ft" style="clear: both">
+    <p id="menu_list"><a href="/">首页</a>&nbsp;<a href="/channel/index/gy" style="color:">古言</a>&nbsp;<a href="/channel/index/xy" style="color:">现言</a>&nbsp;<a href="/channel/index/dm" style="color:">纯爱</a>&nbsp;<a href="/channel/index/tr" style="color:">衍生</a>&nbsp;<a href="/channel/index/nocp_plus" style="color:">无CP+</a>&nbsp;<a href="/channel/channel/bhxs" style="color:">百合</a>&nbsp;<a href="/endnovel" style="color:red;font-weight: bold">完结</a><br>
+    <a href="/pindao">分类</a>&nbsp;<a href="/rank">排行</a>&nbsp;<a href="/pindao/vip">全本</a>&nbsp;<a href="/endnovel/index/half">包月</a>&nbsp;<a href="/free">免费</a>&nbsp;<a href="/pindao/vip?type=dp">中短篇</a>&nbsp;<a href="/download/android">APP</a>&nbsp;<a href="/help">反馈</a></p>
+        <p><form method="get" action="/search"><input type="hidden" name="version" value="1"/><input type="text" size="6" name="kw"/><input type="radio" name="t" value="1" checked>书名<input type="radio" name="t" value="2">作者<input type="submit" value="搜索"><a style="margin-left: 5px" href="/assort">高级搜索</a></form></p>
+        <p>北京时间：2026-11-22 23:45:59</p>
+    <p><a href="/help" target="_blank">反馈</a> <a href="/help/contact" target="_blank">联系我们</a>&copy;晋江文学城 纯属虚构 请勿模仿 版权所有 侵权必究 适度阅读 切勿沉迷 合理安排 享受生活 <font color="#C0C0C0"></font></p>
+    <!-- via *.*.0.148 11-22 23:45:59 -->
+</div>
+<script src="//static.jjwxc.net/scripts/lib/fock/fock_1_0.prod.js"></script><script src="//static.jjwxc.net/scripts/searchkeysign.20260522.js"></script>
+<script type = "text/javascript" src = "//static.jjwxc.net/scripts/shumeiDeviceIdSdk.js?var=2025072215"></script>
+<script>
+    var _hmt = _hmt||[];
+    _hmt.push(['_setAccount', 'f73ac53cbcf4010dac5296a3d8ecf7cb']);
+    (function () {
+        var hm = document.createElement("script");
+        hm.src = "//hm.baidu.com/hm.js?f73ac53cbcf4010dac5296a3d8ecf7cb";
+        var s = document.getElementsByTagName("script")[0];
+        s.parentNode.insertBefore(hm, s);
+    })();
+</script></body>
+</html>

@@ -297,6 +297,18 @@ export class NovelApi {
     return postJson<{ result: { scannedAt: string; groups: any[] } }>(NOVEL_API.marketRadarScan, req)
   }
 
+  /** 按书名全网搜索：返回起点/晋江的可勾选候选，结构与榜单条目一致。 */
+  async bookSearch(keyword: string): Promise<{
+    result?: {
+      keyword: string
+      hits: Array<{ rank: number; title: string; author?: string; tags?: string[]; synopsis?: string; category?: string; platform: string; platformLabel: string }>
+      errors: Array<{ platform: string; message: string }>
+    }
+    error?: string
+  }> {
+    return postJson<Awaited<ReturnType<NovelApi['bookSearch']>>>(NOVEL_API.bookSearch, { keyword })
+  }
+
   /** 把雷达生产底座里的新资产同步进全局资源库（跨书复用；已有名字跳过）。 */
   async marketRadarSync(req: { foundation: import('../protocol.ts').ProductionFoundation }): Promise<{ ok: boolean; synced: { genre: boolean; primaryMode: boolean; secondaryMode: boolean } }> {
     return postJson<{ ok: boolean; synced: { genre: boolean; primaryMode: boolean; secondaryMode: boolean } }>(NOVEL_API.marketRadarSync, req)
